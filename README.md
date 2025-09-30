@@ -1,2 +1,3 @@
 # pgen
-a simple peg parser generator
+
+A simple peg parser generator.

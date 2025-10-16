@@ -138,7 +138,7 @@ ellipsis            <elt>
 labeled_stmt        <label stmt>
 generic_type_instantiation        <base args>
 ------------------------------------------------------------------------------------------------------------------------
-file: 'package' n=IDENT ';' i=import_decl? t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
+file: 'package' n=IDENT ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 
 import_decl:
     | 'import' '(' specs=(t=import_spec end_semi {t})* ')' ';'? {import_decl(specs)}
@@ -261,7 +261,7 @@ map_type: 'map' '[' x=type ']' y=type {map_type(x,y)}
 
 qualified_ident: x=IDENT '.' y=IDENT { selector_expr(x, y) }
 
-top_level_decl: import_decl | declaration | function_decl | method_decl
+top_level_decl: declaration | function_decl | method_decl
 declaration:
     | 'const' '(' c=const_spec_semi* ')' {gen_decl(c)}
     | 'const' c=const_spec {gen_decl([c])}

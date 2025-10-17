@@ -496,8 +496,8 @@ func (s *Stage32) gramCode(node *models.GrammarRuleNode, itemName string, leftVa
 		firstVar := s.Gen.CreateVar("first")
 		lastVar := s.Gen.CreateVar("last")
 		text := node.Snippet().Text()
-		leftBracket := text[:2]
-		rightBracket := text[len(text)-2:]
+		leftBracket := string(text[1])
+		rightBracket := string(text[len(text)-2])
 		depthVar := s.Gen.CreateVar("depth")
 		s.Gen.Put("for {").Push()
 		s.Gen.Put("var %s, %s Node", firstVar, lastVar)

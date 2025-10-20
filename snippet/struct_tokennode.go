@@ -1,10 +1,12 @@
 package snippet
 
 const TokenNodeStruct = `func NewTokenNode(filePath string, fileContent []rune, token *Token) Node {
-	return &TokenNode{
+	ret := &TokenNode{
 		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeToken, token.Start, token.End),
 		token:    token,
 	}
+	creationHook(ret)
+	return ret
 }
 
 type TokenNode struct {

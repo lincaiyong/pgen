@@ -8,10 +8,12 @@ const NodesNodeStruct = `func NewNodesNode(nodes []Node) Node {
 	fileContent := nodes[0].FileContent()
 	start := nodes[0].RangeStart()
 	end := nodes[len(nodes)-1].RangeEnd()
-	return &NodesNode{
+	ret := &NodesNode{
 		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeNodes, start, end),
 		nodes:    nodes,
 	}
+	creationHook(ret)
+	return ret
 }
 
 type NodesNode struct {

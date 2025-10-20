@@ -276,7 +276,7 @@ func (s *Stage32) gramCode(node *models.GrammarRuleNode, itemName string, leftVa
 		if node.Action() == nil {
 			s.Gen.Put("return _1")
 		} else if node.Action().Kind() == models.GrammarRuleNodeTypeNullAction {
-			s.Gen.Put("return dummyNode")
+			s.Gen.Put("return DummyNode")
 		} else {
 			action := s.gramActionCode(node.Action(), leftVar)
 			//if strings.Contains(action, "Node(") {

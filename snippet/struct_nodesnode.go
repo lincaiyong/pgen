@@ -2,7 +2,7 @@ package snippet
 
 const NodesNodeStruct = `func NewNodesNode(nodes []Node) Node {
 	if len(nodes) == 0 {
-		return dummyNode
+		return DummyNode
 	}
 	filePath := nodes[0].FilePath()
 	fileContent := nodes[0].FileContent()
@@ -49,12 +49,12 @@ func (n *NodesNode) BuildLink() {
 func (n *NodesNode) Child(field string) Node {
 	index, err := strconv.Atoi(field)
 	if err != nil {
-		return dummyNode
+		return DummyNode
 	}
 	if index >= 0 && index < len(n.nodes) {
 		return n.nodes[index]
 	}
-	return dummyNode
+	return DummyNode
 }
 
 func (n *NodesNode) SetChild(nodes []Node) {
@@ -94,7 +94,7 @@ func (n *NodesNode) Visit(beforeChildren func(Node) (visitChildren, exit bool), 
 func (n *NodesNode) dumpNodes(hook func(Node, map[string]string) string) string {
 	items := make([]string, 0)
 	for _, t := range n.nodes {
-		items = append(items, dumpNode(t, hook))
+		items = append(items, DumpNode(t, hook))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(items, ", "))
 }

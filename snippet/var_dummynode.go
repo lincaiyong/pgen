@@ -1,7 +1,7 @@
 package snippet
 
-const DummyNodeVar = `var dummyNode Node
+const DummyNodeVar = `var DummyNode Node
 
 func init() {
-	dummyNode = &BaseNode{kind: NodeTypeDummy}
+	DummyNode = &BaseNode{kind: NodeTypeDummy}
 }`

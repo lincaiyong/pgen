@@ -51,6 +51,7 @@ func (s *Stage4) run() {
 	s.Gen.Put(snippet.InRangeFunc).PutNL()
 	s.Gen.Put(snippet.NodesSetParentFunc).PutNL()
 	s.Gen.Put(snippet.NodesVisitFunc).PutNL()
+	s.Gen.Put(snippet.CreationHookVar).PutNL()
 	s.Gen.Put(snippet.DummyNodeVar).PutNL()
 	s.Gen.Put(snippet.BaseNodeStruct).PutNL()
 	s.Gen.Put(snippet.NodesNodeInterface).PutNL()

@@ -6,7 +6,6 @@ const TokenStruct = `func NewToken(kind string, start, end Position, val []rune)
 		Start: start,
 		End:   end,
 		Value: val,
-		//Str:   string(val),
 	}
 }
 
@@ -15,7 +14,6 @@ type Token struct {
 	Start Position
 	End   Position
 	Value []rune
-	//Str   string
 }
 
 func (t *Token) Fork() *Token {

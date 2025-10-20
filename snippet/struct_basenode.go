@@ -13,6 +13,7 @@ type BaseNode struct {
 	parent      Node
 	selfField   string
 	replaceFun  func(Node)
+	any_        any
 }
 
 func (n *BaseNode) FilePath() string {
@@ -79,7 +80,7 @@ func (n *BaseNode) Fields() []string {
 }
 
 func (n *BaseNode) Child(_ string) Node {
-	return dummyNode
+	return DummyNode
 }
 
 func (n *BaseNode) SetChild(_ []Node) {
@@ -134,4 +135,12 @@ func (n *BaseNode) IsDummy() bool {
 
 func (n *BaseNode) UnpackNodes() []Node {
 	return nil
+}
+
+func (n *BaseNode) Any() any {
+	return n.any_
+}
+
+func (n *BaseNode) SetAny(any_ any) {
+	n.any_ = any_
 }`

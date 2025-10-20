@@ -54,7 +54,7 @@ func (s *Stage33) nodeInterfaceAndStructs() {
 		maxLen := 0
 		for _, arg := range node.Args() {
 			s.Gen.Put("if %s == nil {", arg.Camel()).Push()
-			s.Gen.Put("%s = dummyNode", arg.Camel())
+			s.Gen.Put("%s = DummyNode", arg.Camel())
 			s.Gen.Pop().Put("}")
 			if maxLen < len(arg.Camel()) {
 				maxLen = len(arg.Camel())
@@ -64,7 +64,7 @@ func (s *Stage33) nodeInterfaceAndStructs() {
 		if maxLen8 < 8 {
 			maxLen8 = 8
 		}
-		s.Gen.Put("return &%sNode{", pascalName).Push()
+		s.Gen.Put("_1 := &%sNode{", pascalName).Push()
 		s.Gen.Put("BaseNode:%s NewBaseNode(filePath, fileContent, NodeType%s, start, end),",
 			util.MakePadding(maxLen8-8, ' '), pascalName)
 		for _, arg := range node.Args() {
@@ -72,6 +72,8 @@ func (s *Stage33) nodeInterfaceAndStructs() {
 			s.Gen.Put("%s:%s %s,", name, util.MakePadding(maxLen8-len(name), ' '), name)
 		}
 		s.Gen.Pop().Put("}")
+		s.Gen.Put("creationHook(_1)")
+		s.Gen.Put("return _1")
 		s.Gen.Pop().Put("}").PutNL()
 
 		s.Gen.Put("type %sNode struct {", pascalName).Push()
@@ -177,7 +179,7 @@ func (s *Stage33) nodeInterfaceAndStructs() {
 		s.Gen.Put(`ret["kind"] = "\"%s\""`, node.Name())
 
 		for _, arg := range node.Args() {
-			s.Gen.Put(`ret["%s"] = dumpNode(n.%s(), hook)`, arg.Normal(), arg.Pascal())
+			s.Gen.Put(`ret["%s"] = DumpNode(n.%s(), hook)`, arg.Normal(), arg.Pascal())
 		}
 		s.Gen.Put("return ret")
 		s.Gen.Pop().Put("}").PutNL()

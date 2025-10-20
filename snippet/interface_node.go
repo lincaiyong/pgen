@@ -24,4 +24,6 @@ const NodeInterface = `type Node interface {
 	Dump(hook func(Node, map[string]string) string) map[string]string
 	IsDummy() bool
 	UnpackNodes() []Node
+	Any() any
+	SetAny(any)
 }`

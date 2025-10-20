@@ -1,11 +1,11 @@
 package snippet
 
-const DumpNodeFunc = `func dumpNode(n Node, hook func(Node, map[string]string) string) string {
+const DumpNodeFunc = `func DumpNode(n Node, hook func(Node, map[string]string) string) string {
 	return CustomDumpNode(n, hook)
 }
 
 func DumpNodeIndent(node Node) string {
-	result := DumpNode(node)
+	result := SimpleDumpNode(node)
 	var v any
 	err := json.Unmarshal([]byte(result), &v)
 	if err != nil {
@@ -36,7 +36,7 @@ func CustomDumpNode(node Node, hook func(Node, map[string]string) string) string
 	return fmt.Sprintf("{%s}", strings.Join(items, ", "))
 }
 
-func DumpNode(node Node) string {
+func SimpleDumpNode(node Node) string {
 	return CustomDumpNode(node, func(n Node, m map[string]string) string {
 		return ""
 	})

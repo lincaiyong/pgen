@@ -43,7 +43,7 @@ func (n *NodesNode) BuildLink() {
 		target.BuildLink()
 		target.SetReplaceSelf(func(n Node) {
 			i, _ := strconv.Atoi(n.SelfField())
-			n.Parent().(INodesNode).Nodes()[i] = n
+			n.Parent().(*NodesNode).Nodes()[i] = n
 		})
 	}
 }

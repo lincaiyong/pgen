@@ -27,22 +27,10 @@ type Stage33 struct {
 }
 
 func (s *Stage33) run() {
-	s.nodeInterfaceAndStructs()
+	s.nodeStructs()
 }
 
-func (s *Stage33) nodeInterfaceAndStructs() {
-	for _, node := range s.Input.Language.AstNodes() {
-		s.Gen.Put("type I%sNode interface {", util.ToPascalCase(node.Name())).Push()
-		{
-			s.Gen.Put("Node")
-			for _, arg := range node.Args() {
-				s.Gen.Put("%s() Node", arg.Pascal())
-				s.Gen.Put("Set%s(v Node)", arg.Pascal())
-			}
-		}
-		s.Gen.Pop().Put("}").PutNL()
-	}
-
+func (s *Stage33) nodeStructs() {
 	for _, node := range s.Input.Language.AstNodes() {
 		pascalName := util.ToPascalCase(node.Name())
 		params := make([]string, 0)
@@ -101,7 +89,7 @@ func (s *Stage33) nodeInterfaceAndStructs() {
 			s.Gen.Put("%s.SetParent(n)", arg.Camel())
 			s.Gen.Put("%s.SetSelfField(\"%s\")", arg.Camel(), arg.Normal())
 			s.Gen.Put("%s.SetReplaceSelf(func(n Node) {", arg.Camel()).Push()
-			s.Gen.Put("n.Parent().(I%sNode).Set%s(n)", pascalName, arg.Pascal())
+			s.Gen.Put("n.Parent().(*%sNode).Set%s(n)", pascalName, arg.Pascal())
 			s.Gen.Pop().Put("})")
 			s.Gen.Pop().Put("}")
 		}

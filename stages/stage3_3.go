@@ -167,7 +167,7 @@ func (s *Stage33) nodeStructs() {
 		s.Gen.Put(`ret["kind"] = "\"%s\""`, node.Name())
 
 		for _, arg := range node.Args() {
-			s.Gen.Put(`ret["%s"] = DumpNode(n.%s(), hook)`, arg.Normal(), arg.Pascal())
+			s.Gen.Put(`ret["%s"] = DumpNode(n.%s(), hook)`, strings.TrimRight(arg.Normal(), "_"), arg.Pascal())
 		}
 		s.Gen.Put("return ret")
 		s.Gen.Pop().Put("}").PutNL()

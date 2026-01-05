@@ -212,7 +212,6 @@ const NodeTypeTypeSpec = "type_spec"
 const NodeTypeConstDecl = "const_decl"
 const NodeTypeVarDecl = "var_decl"
 const NodeTypeTypeDecl = "type_decl"
-const NodeTypeFuncDecl = "func_decl"
 const NodeTypeEllipsis = "ellipsis"
 const NodeTypeLabeledStmt = "labeled_stmt"
 const NodeTypeGenericTypeInstantiation = "generic_type_instantiation"
@@ -238,11 +237,17 @@ const NodeTypeParameter = "parameter"
 const NodeTypeParameterIdent = "parameter_ident"
 const NodeTypeResult = "result"
 const NodeTypeResultIdent = "result_ident"
+const NodeTypeFunctionDecl = "function_decl"
+const NodeTypeMethodDecl = "method_decl"
+const NodeTypeReceiverIdent = "receiver_ident"
+const NodeTypeReceiverTypeIdent = "receiver_type_ident"
+const NodeTypeReceiverGenericTypeIdent = "receiver_generic_type_ident"
+const NodeTypeReceiver = "receiver"
 
 func errorContext(filePath string, fileContent []rune, offset, lineIdx, charIdx int) string {
 	var lineStartOffset int
 	for i := offset; i >= 0; i-- {
-		if fileContent[i] == '\n' {
+		if i < len(fileContent) && fileContent[i] == '\n' {
 			lineStartOffset = i + 1
 			break
 		}
@@ -6895,264 +6900,6 @@ func (n *TypeDeclNode) Dump(hook func(Node, map[string]string) string) map[strin
 	return ret
 }
 
-func NewFuncDeclNode(filePath string, fileContent []rune, receiver Node, name Node, genericParameters Node, parameters Node, results Node, body Node, start, end Position) Node {
-	if receiver == nil {
-		receiver = DummyNode
-	}
-	if name == nil {
-		name = DummyNode
-	}
-	if genericParameters == nil {
-		genericParameters = DummyNode
-	}
-	if parameters == nil {
-		parameters = DummyNode
-	}
-	if results == nil {
-		results = DummyNode
-	}
-	if body == nil {
-		body = DummyNode
-	}
-	_1 := &FuncDeclNode{
-		BaseNode:          NewBaseNode(filePath, fileContent, NodeTypeFuncDecl, start, end),
-		receiver:          receiver,
-		name:              name,
-		genericParameters: genericParameters,
-		parameters:        parameters,
-		results:           results,
-		body:              body,
-	}
-	creationHook(_1)
-	return _1
-}
-
-type FuncDeclNode struct {
-	*BaseNode
-	receiver          Node
-	name              Node
-	genericParameters Node
-	parameters        Node
-	results           Node
-	body              Node
-}
-
-func (n *FuncDeclNode) Receiver() Node {
-	return n.receiver
-}
-
-func (n *FuncDeclNode) SetReceiver(v Node) {
-	n.receiver = v
-}
-
-func (n *FuncDeclNode) Name() Node {
-	return n.name
-}
-
-func (n *FuncDeclNode) SetName(v Node) {
-	n.name = v
-}
-
-func (n *FuncDeclNode) GenericParameters() Node {
-	return n.genericParameters
-}
-
-func (n *FuncDeclNode) SetGenericParameters(v Node) {
-	n.genericParameters = v
-}
-
-func (n *FuncDeclNode) Parameters() Node {
-	return n.parameters
-}
-
-func (n *FuncDeclNode) SetParameters(v Node) {
-	n.parameters = v
-}
-
-func (n *FuncDeclNode) Results() Node {
-	return n.results
-}
-
-func (n *FuncDeclNode) SetResults(v Node) {
-	n.results = v
-}
-
-func (n *FuncDeclNode) Body() Node {
-	return n.body
-}
-
-func (n *FuncDeclNode) SetBody(v Node) {
-	n.body = v
-}
-
-func (n *FuncDeclNode) BuildLink() {
-	if !n.Receiver().IsDummy() {
-		receiver := n.Receiver()
-		receiver.BuildLink()
-		receiver.SetParent(n)
-		receiver.SetSelfField("receiver")
-		receiver.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetReceiver(n)
-		})
-	}
-	if !n.Name().IsDummy() {
-		name := n.Name()
-		name.BuildLink()
-		name.SetParent(n)
-		name.SetSelfField("name")
-		name.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetName(n)
-		})
-	}
-	if !n.GenericParameters().IsDummy() {
-		genericParameters := n.GenericParameters()
-		genericParameters.BuildLink()
-		genericParameters.SetParent(n)
-		genericParameters.SetSelfField("generic_parameters")
-		genericParameters.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetGenericParameters(n)
-		})
-	}
-	if !n.Parameters().IsDummy() {
-		parameters := n.Parameters()
-		parameters.BuildLink()
-		parameters.SetParent(n)
-		parameters.SetSelfField("parameters")
-		parameters.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetParameters(n)
-		})
-	}
-	if !n.Results().IsDummy() {
-		results := n.Results()
-		results.BuildLink()
-		results.SetParent(n)
-		results.SetSelfField("results")
-		results.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetResults(n)
-		})
-	}
-	if !n.Body().IsDummy() {
-		body := n.Body()
-		body.BuildLink()
-		body.SetParent(n)
-		body.SetSelfField("body")
-		body.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncDeclNode).SetBody(n)
-		})
-	}
-}
-
-func (n *FuncDeclNode) Fields() []string {
-	return []string{
-		"receiver",
-		"name",
-		"generic_parameters",
-		"parameters",
-		"results",
-		"body",
-	}
-}
-
-func (n *FuncDeclNode) Child(field string) Node {
-	if field == "" {
-		return nil
-	}
-	if field == "receiver" {
-		return n.Receiver()
-	}
-	if field == "name" {
-		return n.Name()
-	}
-	if field == "generic_parameters" {
-		return n.GenericParameters()
-	}
-	if field == "parameters" {
-		return n.Parameters()
-	}
-	if field == "results" {
-		return n.Results()
-	}
-	if field == "body" {
-		return n.Body()
-	}
-	return nil
-}
-
-func (n *FuncDeclNode) SetChild(nodes []Node) {
-	if len(nodes) != 6 {
-		return
-	}
-	n.SetReceiver(nodes[0])
-	n.SetName(nodes[1])
-	n.SetGenericParameters(nodes[2])
-	n.SetParameters(nodes[3])
-	n.SetResults(nodes[4])
-	n.SetBody(nodes[5])
-}
-
-func (n *FuncDeclNode) Fork() Node {
-	_ret := &FuncDeclNode{
-		BaseNode:          n.BaseNode.fork(),
-		receiver:          n.receiver.Fork(),
-		name:              n.name.Fork(),
-		genericParameters: n.genericParameters.Fork(),
-		parameters:        n.parameters.Fork(),
-		results:           n.results.Fork(),
-		body:              n.body.Fork(),
-	}
-	_ret.receiver.SetParent(_ret)
-	_ret.name.SetParent(_ret)
-	_ret.genericParameters.SetParent(_ret)
-	_ret.parameters.SetParent(_ret)
-	_ret.results.SetParent(_ret)
-	_ret.body.SetParent(_ret)
-	return _ret
-}
-
-func (n *FuncDeclNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
-	vc, e := beforeChildren(n)
-	if e {
-		return true
-	}
-	if !vc {
-		return false
-	}
-	if n.receiver.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.name.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.genericParameters.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.parameters.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.results.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.body.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if afterChildren(n) {
-		return true
-	}
-	return false
-}
-
-func (n *FuncDeclNode) Dump(hook func(Node, map[string]string) string) map[string]string {
-	ret := make(map[string]string)
-	ret["kind"] = "\"func_decl\""
-	ret["receiver"] = DumpNode(n.Receiver(), hook)
-	ret["name"] = DumpNode(n.Name(), hook)
-	ret["generic_parameters"] = DumpNode(n.GenericParameters(), hook)
-	ret["parameters"] = DumpNode(n.Parameters(), hook)
-	ret["results"] = DumpNode(n.Results(), hook)
-	ret["body"] = DumpNode(n.Body(), hook)
-	return ret
-}
-
 func NewEllipsisNode(filePath string, fileContent []rune, elt Node, start, end Position) Node {
 	if elt == nil {
 		elt = DummyNode
@@ -9676,6 +9423,927 @@ func (n *ResultIdentNode) Dump(hook func(Node, map[string]string) string) map[st
 	return ret
 }
 
+func NewFunctionDeclNode(filePath string, fileContent []rune, name Node, genericParameters Node, parameters Node, results Node, body Node, start, end Position) Node {
+	if name == nil {
+		name = DummyNode
+	}
+	if genericParameters == nil {
+		genericParameters = DummyNode
+	}
+	if parameters == nil {
+		parameters = DummyNode
+	}
+	if results == nil {
+		results = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &FunctionDeclNode{
+		BaseNode:          NewBaseNode(filePath, fileContent, NodeTypeFunctionDecl, start, end),
+		name:              name,
+		genericParameters: genericParameters,
+		parameters:        parameters,
+		results:           results,
+		body:              body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type FunctionDeclNode struct {
+	*BaseNode
+	name              Node
+	genericParameters Node
+	parameters        Node
+	results           Node
+	body              Node
+}
+
+func (n *FunctionDeclNode) Name() Node {
+	return n.name
+}
+
+func (n *FunctionDeclNode) SetName(v Node) {
+	n.name = v
+}
+
+func (n *FunctionDeclNode) GenericParameters() Node {
+	return n.genericParameters
+}
+
+func (n *FunctionDeclNode) SetGenericParameters(v Node) {
+	n.genericParameters = v
+}
+
+func (n *FunctionDeclNode) Parameters() Node {
+	return n.parameters
+}
+
+func (n *FunctionDeclNode) SetParameters(v Node) {
+	n.parameters = v
+}
+
+func (n *FunctionDeclNode) Results() Node {
+	return n.results
+}
+
+func (n *FunctionDeclNode) SetResults(v Node) {
+	n.results = v
+}
+
+func (n *FunctionDeclNode) Body() Node {
+	return n.body
+}
+
+func (n *FunctionDeclNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *FunctionDeclNode) BuildLink() {
+	if !n.Name().IsDummy() {
+		name := n.Name()
+		name.BuildLink()
+		name.SetParent(n)
+		name.SetSelfField("name")
+		name.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FunctionDeclNode).SetName(n)
+		})
+	}
+	if !n.GenericParameters().IsDummy() {
+		genericParameters := n.GenericParameters()
+		genericParameters.BuildLink()
+		genericParameters.SetParent(n)
+		genericParameters.SetSelfField("generic_parameters")
+		genericParameters.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FunctionDeclNode).SetGenericParameters(n)
+		})
+	}
+	if !n.Parameters().IsDummy() {
+		parameters := n.Parameters()
+		parameters.BuildLink()
+		parameters.SetParent(n)
+		parameters.SetSelfField("parameters")
+		parameters.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FunctionDeclNode).SetParameters(n)
+		})
+	}
+	if !n.Results().IsDummy() {
+		results := n.Results()
+		results.BuildLink()
+		results.SetParent(n)
+		results.SetSelfField("results")
+		results.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FunctionDeclNode).SetResults(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FunctionDeclNode).SetBody(n)
+		})
+	}
+}
+
+func (n *FunctionDeclNode) Fields() []string {
+	return []string{
+		"name",
+		"generic_parameters",
+		"parameters",
+		"results",
+		"body",
+	}
+}
+
+func (n *FunctionDeclNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "name" {
+		return n.Name()
+	}
+	if field == "generic_parameters" {
+		return n.GenericParameters()
+	}
+	if field == "parameters" {
+		return n.Parameters()
+	}
+	if field == "results" {
+		return n.Results()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *FunctionDeclNode) SetChild(nodes []Node) {
+	if len(nodes) != 5 {
+		return
+	}
+	n.SetName(nodes[0])
+	n.SetGenericParameters(nodes[1])
+	n.SetParameters(nodes[2])
+	n.SetResults(nodes[3])
+	n.SetBody(nodes[4])
+}
+
+func (n *FunctionDeclNode) Fork() Node {
+	_ret := &FunctionDeclNode{
+		BaseNode:          n.BaseNode.fork(),
+		name:              n.name.Fork(),
+		genericParameters: n.genericParameters.Fork(),
+		parameters:        n.parameters.Fork(),
+		results:           n.results.Fork(),
+		body:              n.body.Fork(),
+	}
+	_ret.name.SetParent(_ret)
+	_ret.genericParameters.SetParent(_ret)
+	_ret.parameters.SetParent(_ret)
+	_ret.results.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *FunctionDeclNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.name.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.genericParameters.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.parameters.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.results.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *FunctionDeclNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"function_decl\""
+	ret["name"] = DumpNode(n.Name(), hook)
+	ret["generic_parameters"] = DumpNode(n.GenericParameters(), hook)
+	ret["parameters"] = DumpNode(n.Parameters(), hook)
+	ret["results"] = DumpNode(n.Results(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewMethodDeclNode(filePath string, fileContent []rune, receiver Node, name Node, genericParameters Node, parameters Node, results Node, body Node, start, end Position) Node {
+	if receiver == nil {
+		receiver = DummyNode
+	}
+	if name == nil {
+		name = DummyNode
+	}
+	if genericParameters == nil {
+		genericParameters = DummyNode
+	}
+	if parameters == nil {
+		parameters = DummyNode
+	}
+	if results == nil {
+		results = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &MethodDeclNode{
+		BaseNode:          NewBaseNode(filePath, fileContent, NodeTypeMethodDecl, start, end),
+		receiver:          receiver,
+		name:              name,
+		genericParameters: genericParameters,
+		parameters:        parameters,
+		results:           results,
+		body:              body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type MethodDeclNode struct {
+	*BaseNode
+	receiver          Node
+	name              Node
+	genericParameters Node
+	parameters        Node
+	results           Node
+	body              Node
+}
+
+func (n *MethodDeclNode) Receiver() Node {
+	return n.receiver
+}
+
+func (n *MethodDeclNode) SetReceiver(v Node) {
+	n.receiver = v
+}
+
+func (n *MethodDeclNode) Name() Node {
+	return n.name
+}
+
+func (n *MethodDeclNode) SetName(v Node) {
+	n.name = v
+}
+
+func (n *MethodDeclNode) GenericParameters() Node {
+	return n.genericParameters
+}
+
+func (n *MethodDeclNode) SetGenericParameters(v Node) {
+	n.genericParameters = v
+}
+
+func (n *MethodDeclNode) Parameters() Node {
+	return n.parameters
+}
+
+func (n *MethodDeclNode) SetParameters(v Node) {
+	n.parameters = v
+}
+
+func (n *MethodDeclNode) Results() Node {
+	return n.results
+}
+
+func (n *MethodDeclNode) SetResults(v Node) {
+	n.results = v
+}
+
+func (n *MethodDeclNode) Body() Node {
+	return n.body
+}
+
+func (n *MethodDeclNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *MethodDeclNode) BuildLink() {
+	if !n.Receiver().IsDummy() {
+		receiver := n.Receiver()
+		receiver.BuildLink()
+		receiver.SetParent(n)
+		receiver.SetSelfField("receiver")
+		receiver.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetReceiver(n)
+		})
+	}
+	if !n.Name().IsDummy() {
+		name := n.Name()
+		name.BuildLink()
+		name.SetParent(n)
+		name.SetSelfField("name")
+		name.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetName(n)
+		})
+	}
+	if !n.GenericParameters().IsDummy() {
+		genericParameters := n.GenericParameters()
+		genericParameters.BuildLink()
+		genericParameters.SetParent(n)
+		genericParameters.SetSelfField("generic_parameters")
+		genericParameters.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetGenericParameters(n)
+		})
+	}
+	if !n.Parameters().IsDummy() {
+		parameters := n.Parameters()
+		parameters.BuildLink()
+		parameters.SetParent(n)
+		parameters.SetSelfField("parameters")
+		parameters.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetParameters(n)
+		})
+	}
+	if !n.Results().IsDummy() {
+		results := n.Results()
+		results.BuildLink()
+		results.SetParent(n)
+		results.SetSelfField("results")
+		results.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetResults(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*MethodDeclNode).SetBody(n)
+		})
+	}
+}
+
+func (n *MethodDeclNode) Fields() []string {
+	return []string{
+		"receiver",
+		"name",
+		"generic_parameters",
+		"parameters",
+		"results",
+		"body",
+	}
+}
+
+func (n *MethodDeclNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "receiver" {
+		return n.Receiver()
+	}
+	if field == "name" {
+		return n.Name()
+	}
+	if field == "generic_parameters" {
+		return n.GenericParameters()
+	}
+	if field == "parameters" {
+		return n.Parameters()
+	}
+	if field == "results" {
+		return n.Results()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *MethodDeclNode) SetChild(nodes []Node) {
+	if len(nodes) != 6 {
+		return
+	}
+	n.SetReceiver(nodes[0])
+	n.SetName(nodes[1])
+	n.SetGenericParameters(nodes[2])
+	n.SetParameters(nodes[3])
+	n.SetResults(nodes[4])
+	n.SetBody(nodes[5])
+}
+
+func (n *MethodDeclNode) Fork() Node {
+	_ret := &MethodDeclNode{
+		BaseNode:          n.BaseNode.fork(),
+		receiver:          n.receiver.Fork(),
+		name:              n.name.Fork(),
+		genericParameters: n.genericParameters.Fork(),
+		parameters:        n.parameters.Fork(),
+		results:           n.results.Fork(),
+		body:              n.body.Fork(),
+	}
+	_ret.receiver.SetParent(_ret)
+	_ret.name.SetParent(_ret)
+	_ret.genericParameters.SetParent(_ret)
+	_ret.parameters.SetParent(_ret)
+	_ret.results.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *MethodDeclNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.receiver.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.name.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.genericParameters.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.parameters.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.results.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *MethodDeclNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"method_decl\""
+	ret["receiver"] = DumpNode(n.Receiver(), hook)
+	ret["name"] = DumpNode(n.Name(), hook)
+	ret["generic_parameters"] = DumpNode(n.GenericParameters(), hook)
+	ret["parameters"] = DumpNode(n.Parameters(), hook)
+	ret["results"] = DumpNode(n.Results(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewReceiverIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
+	if ident == nil {
+		ident = DummyNode
+	}
+	_1 := &ReceiverIdentNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeReceiverIdent, start, end),
+		ident:    ident,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ReceiverIdentNode struct {
+	*BaseNode
+	ident Node
+}
+
+func (n *ReceiverIdentNode) Ident() Node {
+	return n.ident
+}
+
+func (n *ReceiverIdentNode) SetIdent(v Node) {
+	n.ident = v
+}
+
+func (n *ReceiverIdentNode) BuildLink() {
+	if !n.Ident().IsDummy() {
+		ident := n.Ident()
+		ident.BuildLink()
+		ident.SetParent(n)
+		ident.SetSelfField("ident")
+		ident.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverIdentNode).SetIdent(n)
+		})
+	}
+}
+
+func (n *ReceiverIdentNode) Fields() []string {
+	return []string{
+		"ident",
+	}
+}
+
+func (n *ReceiverIdentNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "ident" {
+		return n.Ident()
+	}
+	return nil
+}
+
+func (n *ReceiverIdentNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
+		return
+	}
+	n.SetIdent(nodes[0])
+}
+
+func (n *ReceiverIdentNode) Fork() Node {
+	_ret := &ReceiverIdentNode{
+		BaseNode: n.BaseNode.fork(),
+		ident:    n.ident.Fork(),
+	}
+	_ret.ident.SetParent(_ret)
+	return _ret
+}
+
+func (n *ReceiverIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.ident.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ReceiverIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"receiver_ident\""
+	ret["ident"] = DumpNode(n.Ident(), hook)
+	return ret
+}
+
+func NewReceiverTypeIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
+	if ident == nil {
+		ident = DummyNode
+	}
+	_1 := &ReceiverTypeIdentNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeReceiverTypeIdent, start, end),
+		ident:    ident,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ReceiverTypeIdentNode struct {
+	*BaseNode
+	ident Node
+}
+
+func (n *ReceiverTypeIdentNode) Ident() Node {
+	return n.ident
+}
+
+func (n *ReceiverTypeIdentNode) SetIdent(v Node) {
+	n.ident = v
+}
+
+func (n *ReceiverTypeIdentNode) BuildLink() {
+	if !n.Ident().IsDummy() {
+		ident := n.Ident()
+		ident.BuildLink()
+		ident.SetParent(n)
+		ident.SetSelfField("ident")
+		ident.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverTypeIdentNode).SetIdent(n)
+		})
+	}
+}
+
+func (n *ReceiverTypeIdentNode) Fields() []string {
+	return []string{
+		"ident",
+	}
+}
+
+func (n *ReceiverTypeIdentNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "ident" {
+		return n.Ident()
+	}
+	return nil
+}
+
+func (n *ReceiverTypeIdentNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
+		return
+	}
+	n.SetIdent(nodes[0])
+}
+
+func (n *ReceiverTypeIdentNode) Fork() Node {
+	_ret := &ReceiverTypeIdentNode{
+		BaseNode: n.BaseNode.fork(),
+		ident:    n.ident.Fork(),
+	}
+	_ret.ident.SetParent(_ret)
+	return _ret
+}
+
+func (n *ReceiverTypeIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.ident.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ReceiverTypeIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"receiver_type_ident\""
+	ret["ident"] = DumpNode(n.Ident(), hook)
+	return ret
+}
+
+func NewReceiverGenericTypeIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
+	if ident == nil {
+		ident = DummyNode
+	}
+	_1 := &ReceiverGenericTypeIdentNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeReceiverGenericTypeIdent, start, end),
+		ident:    ident,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ReceiverGenericTypeIdentNode struct {
+	*BaseNode
+	ident Node
+}
+
+func (n *ReceiverGenericTypeIdentNode) Ident() Node {
+	return n.ident
+}
+
+func (n *ReceiverGenericTypeIdentNode) SetIdent(v Node) {
+	n.ident = v
+}
+
+func (n *ReceiverGenericTypeIdentNode) BuildLink() {
+	if !n.Ident().IsDummy() {
+		ident := n.Ident()
+		ident.BuildLink()
+		ident.SetParent(n)
+		ident.SetSelfField("ident")
+		ident.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverGenericTypeIdentNode).SetIdent(n)
+		})
+	}
+}
+
+func (n *ReceiverGenericTypeIdentNode) Fields() []string {
+	return []string{
+		"ident",
+	}
+}
+
+func (n *ReceiverGenericTypeIdentNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "ident" {
+		return n.Ident()
+	}
+	return nil
+}
+
+func (n *ReceiverGenericTypeIdentNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
+		return
+	}
+	n.SetIdent(nodes[0])
+}
+
+func (n *ReceiverGenericTypeIdentNode) Fork() Node {
+	_ret := &ReceiverGenericTypeIdentNode{
+		BaseNode: n.BaseNode.fork(),
+		ident:    n.ident.Fork(),
+	}
+	_ret.ident.SetParent(_ret)
+	return _ret
+}
+
+func (n *ReceiverGenericTypeIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.ident.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ReceiverGenericTypeIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"receiver_generic_type_ident\""
+	ret["ident"] = DumpNode(n.Ident(), hook)
+	return ret
+}
+
+func NewReceiverNode(filePath string, fileContent []rune, name Node, star Node, type_ Node, start, end Position) Node {
+	if name == nil {
+		name = DummyNode
+	}
+	if star == nil {
+		star = DummyNode
+	}
+	if type_ == nil {
+		type_ = DummyNode
+	}
+	_1 := &ReceiverNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeReceiver, start, end),
+		name:     name,
+		star:     star,
+		type_:    type_,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ReceiverNode struct {
+	*BaseNode
+	name  Node
+	star  Node
+	type_ Node
+}
+
+func (n *ReceiverNode) Name() Node {
+	return n.name
+}
+
+func (n *ReceiverNode) SetName(v Node) {
+	n.name = v
+}
+
+func (n *ReceiverNode) Star() Node {
+	return n.star
+}
+
+func (n *ReceiverNode) SetStar(v Node) {
+	n.star = v
+}
+
+func (n *ReceiverNode) Type() Node {
+	return n.type_
+}
+
+func (n *ReceiverNode) SetType(v Node) {
+	n.type_ = v
+}
+
+func (n *ReceiverNode) BuildLink() {
+	if !n.Name().IsDummy() {
+		name := n.Name()
+		name.BuildLink()
+		name.SetParent(n)
+		name.SetSelfField("name")
+		name.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverNode).SetName(n)
+		})
+	}
+	if !n.Star().IsDummy() {
+		star := n.Star()
+		star.BuildLink()
+		star.SetParent(n)
+		star.SetSelfField("star")
+		star.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverNode).SetStar(n)
+		})
+	}
+	if !n.Type().IsDummy() {
+		type_ := n.Type()
+		type_.BuildLink()
+		type_.SetParent(n)
+		type_.SetSelfField("type_")
+		type_.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ReceiverNode).SetType(n)
+		})
+	}
+}
+
+func (n *ReceiverNode) Fields() []string {
+	return []string{
+		"name",
+		"star",
+		"type_",
+	}
+}
+
+func (n *ReceiverNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "name" {
+		return n.Name()
+	}
+	if field == "star" {
+		return n.Star()
+	}
+	if field == "type_" {
+		return n.Type()
+	}
+	return nil
+}
+
+func (n *ReceiverNode) SetChild(nodes []Node) {
+	if len(nodes) != 3 {
+		return
+	}
+	n.SetName(nodes[0])
+	n.SetStar(nodes[1])
+	n.SetType(nodes[2])
+}
+
+func (n *ReceiverNode) Fork() Node {
+	_ret := &ReceiverNode{
+		BaseNode: n.BaseNode.fork(),
+		name:     n.name.Fork(),
+		star:     n.star.Fork(),
+		type_:    n.type_.Fork(),
+	}
+	_ret.name.SetParent(_ret)
+	_ret.star.SetParent(_ret)
+	_ret.type_.SetParent(_ret)
+	return _ret
+}
+
+func (n *ReceiverNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.name.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.star.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.type_.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ReceiverNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"receiver\""
+	ret["name"] = DumpNode(n.Name(), hook)
+	ret["star"] = DumpNode(n.Star(), hook)
+	ret["type"] = DumpNode(n.Type(), hook)
+	return ret
+}
+
 func NewTokenizer(filePath string, fileContent []rune) *Tokenizer {
 	tk := &Tokenizer{
 		_filePath:  filePath,
@@ -11160,10 +11828,10 @@ func (ps *Parser) topLevelDecl() Node {
 
 /*
 function_decl:
-| 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {func_decl(_, n, t, p, r, b)}
+| 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {function_decl(n, t, p, r, b)}
 */
 func (ps *Parser) functionDecl() Node {
-	/* 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {func_decl(_, n, t, p, r, b)}
+	/* 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {function_decl(n, t, p, r, b)}
 	 */
 	pos := ps._mark()
 	for {
@@ -11222,7 +11890,7 @@ func (ps *Parser) functionDecl() Node {
 		_ = r
 		b = ps.block()
 		_ = b
-		return NewFuncDeclNode(ps._filePath, ps._fileContent, nil, n, t, p, r, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionDeclNode(ps._filePath, ps._fileContent, n, t, p, r, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -11452,37 +12120,81 @@ func (ps *Parser) resultIdent() Node {
 
 /*
 method_decl:
-| 'func' r=receiver n=method_ident s=signature b=block? {func_decl(r,n,_,s,b)}
+| 'func' '(' rc=receiver ')' n=method_ident '(' p=','.parameter* ','? ')' rs=result_decl? b=block? {method_decl(rc, n, p, rs, b)}
 */
 func (ps *Parser) methodDecl() Node {
-	/* 'func' r=receiver n=method_ident s=signature b=block? {func_decl(r,n,_,s,b)}
+	/* 'func' '(' rc=receiver ')' n=method_ident '(' p=','.parameter* ','? ')' rs=result_decl? b=block? {method_decl(rc, n, p, rs, b)}
 	 */
 	pos := ps._mark()
 	for {
 		var b Node
 		var n Node
-		var r Node
-		var s Node
+		var p Node
+		var rc Node
+		var rs Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwFunc)
 		if _1 == nil {
 			break
 		}
-		r = ps.receiver()
-		if r == nil {
+		var _2 Node
+		_2 = ps._expectK(TokenTypeOpLeftParen)
+		if _2 == nil {
+			break
+		}
+		rc = ps.receiver()
+		if rc == nil {
+			break
+		}
+		var _3 Node
+		_3 = ps._expectK(TokenTypeOpRightParen)
+		if _3 == nil {
 			break
 		}
 		n = ps.methodIdent()
 		if n == nil {
 			break
 		}
-		s = ps.signature()
-		if s == nil {
+		var _4 Node
+		_4 = ps._expectK(TokenTypeOpLeftParen)
+		if _4 == nil {
 			break
 		}
+		_5 := make([]Node, 0)
+		var _6 Node
+		var _7 Node
+		_6 = ps.parameter()
+		if _6 != nil {
+			_5 = append(_5, _6)
+			for {
+				_p := ps._mark()
+				_7 = ps._expectK(TokenTypeOpComma)
+				if _7 == nil {
+					break
+				}
+				_6 = ps.parameter()
+				if _6 == nil {
+					ps._reset(_p)
+					break
+				}
+				_5 = append(_5, _6)
+			}
+		}
+		p = NewNodesNode(_5)
+		_ = p
+		var _8 Node
+		_8 = ps._expectK(TokenTypeOpComma)
+		_ = _8
+		var _9 Node
+		_9 = ps._expectK(TokenTypeOpRightParen)
+		if _9 == nil {
+			break
+		}
+		rs = ps.resultDecl()
+		_ = rs
 		b = ps.block()
 		_ = b
-		return NewFuncDeclNode(ps._filePath, ps._fileContent, r, n, nil, s, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewMethodDeclNode(ps._filePath, ps._fileContent, rc, n, p, rs, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -11503,6 +12215,142 @@ func (ps *Parser) methodIdent() Node {
 			break
 		}
 		return NewMethodIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+receiver:
+| n=receiver_ident? star='*'? t=receiver_type_ident ('[' g=','.receiver_generic_type_ident+ ','? ']')? {receiver(n, star, t, g)}
+*/
+func (ps *Parser) receiver() Node {
+	/* n=receiver_ident? star='*'? t=receiver_type_ident ('[' g=','.receiver_generic_type_ident+ ','? ']')? {receiver(n, star, t, g)}
+	 */
+	pos := ps._mark()
+	for {
+		var g Node
+		var n Node
+		var star Node
+		var t Node
+		n = ps.receiverIdent()
+		_ = n
+		star = ps._expectK(TokenTypeOpStar)
+		_ = star
+		t = ps.receiverTypeIdent()
+		if t == nil {
+			break
+		}
+		var _1 Node
+		for {
+			_ok := false
+			_p := ps._mark()
+			for {
+				var _2 Node
+				_2 = ps._expectK(TokenTypeOpLeftBracket)
+				if _2 == nil {
+					break
+				}
+				_3 := make([]Node, 0)
+				var _4, _5 Node
+				_4 = ps.receiverGenericTypeIdent()
+				if _4 == nil {
+					break
+				}
+				_3 = append(_3, _4)
+				for {
+					_p1 := ps._mark()
+					_5 = ps._expectK(TokenTypeOpComma)
+					if _5 == nil {
+						break
+					}
+					_4 = ps.receiverGenericTypeIdent()
+					if _4 == nil {
+						ps._reset(_p1)
+						break
+					}
+					_3 = append(_3, _4)
+				}
+				g = NewNodesNode(_3)
+				_ = g
+				var _6 Node
+				_6 = ps._expectK(TokenTypeOpComma)
+				_ = _6
+				_1 = ps._expectK(TokenTypeOpRightBracket)
+				if _1 == nil {
+					break
+				}
+				_ok = true
+				break
+			}
+			if !_ok {
+				ps._reset(_p)
+				g = nil
+			}
+			break
+		}
+		_ = _1
+		return NewReceiverNode(ps._filePath, ps._fileContent, n, star, t, g, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+receiver_ident:
+| n=IDENT {receiver_ident(n)}
+*/
+func (ps *Parser) receiverIdent() Node {
+	/* n=IDENT {receiver_ident(n)}
+	 */
+	pos := ps._mark()
+	for {
+		var n Node
+		n = ps._expectK(TokenTypeIdent)
+		if n == nil {
+			break
+		}
+		return NewReceiverIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+receiver_type_ident:
+| n=IDENT {receiver_type_ident(n)}
+*/
+func (ps *Parser) receiverTypeIdent() Node {
+	/* n=IDENT {receiver_type_ident(n)}
+	 */
+	pos := ps._mark()
+	for {
+		var n Node
+		n = ps._expectK(TokenTypeIdent)
+		if n == nil {
+			break
+		}
+		return NewReceiverTypeIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+receiver_generic_type_ident:
+| n=IDENT {receiver_generic_type_ident(n)}
+*/
+func (ps *Parser) receiverGenericTypeIdent() Node {
+	/* n=IDENT {receiver_generic_type_ident(n)}
+	 */
+	pos := ps._mark()
+	for {
+		var n Node
+		n = ps._expectK(TokenTypeIdent)
+		if n == nil {
+			break
+		}
+		return NewReceiverGenericTypeIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil

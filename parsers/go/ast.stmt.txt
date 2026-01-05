@@ -10,14 +10,20 @@ expr_stmt           <x>
 inc_stmt            <x>
 dec_stmt            <x>
 
-if_stmt             <init cond body else>
-for_stmt            <init cond post body>
+if_stmt             <init condition body else>
+for_stmt            <init condition update body>
 for_assign_range_stmt   <key value object body>
 for_decl_range_stmt     <key value object body>
 
 select_stmt         <body>
-switch_stmt         <init tag body>
-type_switch_stmt    <init assign body>
+switch_stmt         <init expression body>
+type_switch_stmt    <init guard body>
+type_switch_guard   <name expression>
+
+default_clause      <body>
+expr_case_clause    <condition body>
+select_case_clause  <condition body>
+type_case_clause    <types body>
 
 return_stmt         <results>
 

@@ -4,8 +4,9 @@ file                <package imports declarations>
 basic_lit           <value>
 composite_lit       <type elts>
 function_lit            <type body>
-case_clause         <list body>
-common_clause       <common body>
+
+
+
 field_list          <list>
 field               <names type tag>
 import_decl         <x>

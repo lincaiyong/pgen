@@ -1,31 +1,20 @@
-select_stmt: 'select' b=select_body {select_stmt(b)}
+select_stmt: 'select' '{' s=select_case_clause* '}' {select_stmt(s)}
+select_case_clause:
+    | 'case' x=select_case_condition ':' y=statement_semi_list? {select_case_clause(x,y)}
+    | 'default' ':' x=statement_semi_list? {default_clause(x)}
+select_case_condition: send_stmt|assignment|short_var_decl|expression_stmt
 
-select_body: '{' cases=common_clause* '}' {block_stmt(cases)}
-
-common_clause:
-    | 'case' x=send_stmt ':' y=statement_semi_list? {common_clause(x,y)}
-    | 'case' x=recv_stmt ':' y=statement_semi_list? {common_clause(x,y)}
-    | 'default' ':' x=statement_semi_list? {common_clause(_,x)}
-recv_stmt:
-    | x=expression_list op='=' y=expression {assign_stmt(x, op, [y])}
-    | x=identifier_list op=':=' y=expression {assign_stmt(x, op, [y])}
-    | x=expression {expr_stmt(x)}
-
-type_switch_body: '{' cases=type_case_clause* '}' {block_stmt(cases)}
 type_switch_stmt:
-    | 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] b=type_switch_body {type_switch_stmt(init,assign,b)}
-
-type_assert_expr: r=primary_expr '.' '(' 'type' ')' {type_assert_expr(r,_)}
+    | 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] '{' s=type_case_clause* '}' {type_switch_stmt(init,assign,s)}
 type_switch_guard:
-    | l=IDENT op=':=' t=type_assert_expr {assign_stmt([l], op, [t])}
-    | t=type_assert_expr {expr_stmt(t)}
+    | (i=type_switch_guard_ident ':=')? r=primary_expr '.' '(' 'type' ')' {type_switch_guard(i, r)}
+type_switch_guard_ident: i=IDENT {type_switch_guard_ident(i)}
 type_case_clause:
-    | 'case' x=','.type+ ':' y=statement_semi_list? {case_clause(x,y)}
-    | 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+    | 'case' x=','.type+ ':' y=statement_semi_list? {type_case_clause(x,y)}
+    | 'default' ':' x=statement_semi_list? {default_clause(x)}
 
-expr_switch_body: '{' cases=expr_case_clause* '}' {block_stmt(cases)}
 expr_switch_stmt:
-    | 'switch' [ (init=simple_stmt ';')? tag=expression? ]  b=expr_switch_body {switch_stmt(init,tag,b)}
+    | 'switch' [ (init=simple_stmt ';')? tag=expression? ] '{' s=expr_case_clause* '}' {switch_stmt(init,tag,s)}
 expr_case_clause:
-    | 'case' x=expression_list ':' y=statement_semi_list? {case_clause(x,y)}
-    | 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+    | 'case' x=expression_list ':' y=statement_semi_list? {expr_case_clause(x,y)}
+    | 'default' ':' x=statement_semi_list? {default_clause(x)}

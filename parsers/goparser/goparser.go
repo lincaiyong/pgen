@@ -168,8 +168,6 @@ const NodeTypeFile = "file"
 const NodeTypeBasicLit = "basic_lit"
 const NodeTypeCompositeLit = "composite_lit"
 const NodeTypeFunctionLit = "function_lit"
-const NodeTypeCaseClause = "case_clause"
-const NodeTypeCommonClause = "common_clause"
 const NodeTypeFieldList = "field_list"
 const NodeTypeField = "field"
 const NodeTypeImportDecl = "import_decl"
@@ -238,6 +236,11 @@ const NodeTypeForDeclRangeStmt = "for_decl_range_stmt"
 const NodeTypeSelectStmt = "select_stmt"
 const NodeTypeSwitchStmt = "switch_stmt"
 const NodeTypeTypeSwitchStmt = "type_switch_stmt"
+const NodeTypeTypeSwitchGuard = "type_switch_guard"
+const NodeTypeDefaultClause = "default_clause"
+const NodeTypeExprCaseClause = "expr_case_clause"
+const NodeTypeSelectCaseClause = "select_case_clause"
+const NodeTypeTypeCaseClause = "type_case_clause"
 const NodeTypeReturnStmt = "return_stmt"
 const NodeTypeFallthroughStmt = "fallthrough_stmt"
 const NodeTypeContinueStmt = "continue_stmt"
@@ -1228,258 +1231,6 @@ func (n *FunctionLitNode) Dump(hook func(Node, map[string]string) string) map[st
 	ret := make(map[string]string)
 	ret["kind"] = "\"function_lit\""
 	ret["type"] = DumpNode(n.Type(), hook)
-	ret["body"] = DumpNode(n.Body(), hook)
-	return ret
-}
-
-func NewCaseClauseNode(filePath string, fileContent []rune, list Node, body Node, start, end Position) Node {
-	if list == nil {
-		list = DummyNode
-	}
-	if body == nil {
-		body = DummyNode
-	}
-	_1 := &CaseClauseNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeCaseClause, start, end),
-		list:     list,
-		body:     body,
-	}
-	creationHook(_1)
-	return _1
-}
-
-type CaseClauseNode struct {
-	*BaseNode
-	list Node
-	body Node
-}
-
-func (n *CaseClauseNode) List() Node {
-	return n.list
-}
-
-func (n *CaseClauseNode) SetList(v Node) {
-	n.list = v
-}
-
-func (n *CaseClauseNode) Body() Node {
-	return n.body
-}
-
-func (n *CaseClauseNode) SetBody(v Node) {
-	n.body = v
-}
-
-func (n *CaseClauseNode) BuildLink() {
-	if !n.List().IsDummy() {
-		list := n.List()
-		list.BuildLink()
-		list.SetParent(n)
-		list.SetSelfField("list")
-		list.SetReplaceSelf(func(n Node) {
-			n.Parent().(*CaseClauseNode).SetList(n)
-		})
-	}
-	if !n.Body().IsDummy() {
-		body := n.Body()
-		body.BuildLink()
-		body.SetParent(n)
-		body.SetSelfField("body")
-		body.SetReplaceSelf(func(n Node) {
-			n.Parent().(*CaseClauseNode).SetBody(n)
-		})
-	}
-}
-
-func (n *CaseClauseNode) Fields() []string {
-	return []string{
-		"list",
-		"body",
-	}
-}
-
-func (n *CaseClauseNode) Child(field string) Node {
-	if field == "" {
-		return nil
-	}
-	if field == "list" {
-		return n.List()
-	}
-	if field == "body" {
-		return n.Body()
-	}
-	return nil
-}
-
-func (n *CaseClauseNode) SetChild(nodes []Node) {
-	if len(nodes) != 2 {
-		return
-	}
-	n.SetList(nodes[0])
-	n.SetBody(nodes[1])
-}
-
-func (n *CaseClauseNode) Fork() Node {
-	_ret := &CaseClauseNode{
-		BaseNode: n.BaseNode.fork(),
-		list:     n.list.Fork(),
-		body:     n.body.Fork(),
-	}
-	_ret.list.SetParent(_ret)
-	_ret.body.SetParent(_ret)
-	return _ret
-}
-
-func (n *CaseClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
-	vc, e := beforeChildren(n)
-	if e {
-		return true
-	}
-	if !vc {
-		return false
-	}
-	if n.list.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.body.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if afterChildren(n) {
-		return true
-	}
-	return false
-}
-
-func (n *CaseClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
-	ret := make(map[string]string)
-	ret["kind"] = "\"case_clause\""
-	ret["list"] = DumpNode(n.List(), hook)
-	ret["body"] = DumpNode(n.Body(), hook)
-	return ret
-}
-
-func NewCommonClauseNode(filePath string, fileContent []rune, common Node, body Node, start, end Position) Node {
-	if common == nil {
-		common = DummyNode
-	}
-	if body == nil {
-		body = DummyNode
-	}
-	_1 := &CommonClauseNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeCommonClause, start, end),
-		common:   common,
-		body:     body,
-	}
-	creationHook(_1)
-	return _1
-}
-
-type CommonClauseNode struct {
-	*BaseNode
-	common Node
-	body   Node
-}
-
-func (n *CommonClauseNode) Common() Node {
-	return n.common
-}
-
-func (n *CommonClauseNode) SetCommon(v Node) {
-	n.common = v
-}
-
-func (n *CommonClauseNode) Body() Node {
-	return n.body
-}
-
-func (n *CommonClauseNode) SetBody(v Node) {
-	n.body = v
-}
-
-func (n *CommonClauseNode) BuildLink() {
-	if !n.Common().IsDummy() {
-		common := n.Common()
-		common.BuildLink()
-		common.SetParent(n)
-		common.SetSelfField("common")
-		common.SetReplaceSelf(func(n Node) {
-			n.Parent().(*CommonClauseNode).SetCommon(n)
-		})
-	}
-	if !n.Body().IsDummy() {
-		body := n.Body()
-		body.BuildLink()
-		body.SetParent(n)
-		body.SetSelfField("body")
-		body.SetReplaceSelf(func(n Node) {
-			n.Parent().(*CommonClauseNode).SetBody(n)
-		})
-	}
-}
-
-func (n *CommonClauseNode) Fields() []string {
-	return []string{
-		"common",
-		"body",
-	}
-}
-
-func (n *CommonClauseNode) Child(field string) Node {
-	if field == "" {
-		return nil
-	}
-	if field == "common" {
-		return n.Common()
-	}
-	if field == "body" {
-		return n.Body()
-	}
-	return nil
-}
-
-func (n *CommonClauseNode) SetChild(nodes []Node) {
-	if len(nodes) != 2 {
-		return
-	}
-	n.SetCommon(nodes[0])
-	n.SetBody(nodes[1])
-}
-
-func (n *CommonClauseNode) Fork() Node {
-	_ret := &CommonClauseNode{
-		BaseNode: n.BaseNode.fork(),
-		common:   n.common.Fork(),
-		body:     n.body.Fork(),
-	}
-	_ret.common.SetParent(_ret)
-	_ret.body.SetParent(_ret)
-	return _ret
-}
-
-func (n *CommonClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
-	vc, e := beforeChildren(n)
-	if e {
-		return true
-	}
-	if !vc {
-		return false
-	}
-	if n.common.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.body.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if afterChildren(n) {
-		return true
-	}
-	return false
-}
-
-func (n *CommonClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
-	ret := make(map[string]string)
-	ret["kind"] = "\"common_clause\""
-	ret["common"] = DumpNode(n.Common(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
 }
@@ -8675,12 +8426,12 @@ func (n *DecStmtNode) Dump(hook func(Node, map[string]string) string) map[string
 	return ret
 }
 
-func NewIfStmtNode(filePath string, fileContent []rune, init Node, cond Node, body Node, else_ Node, start, end Position) Node {
+func NewIfStmtNode(filePath string, fileContent []rune, init Node, condition Node, body Node, else_ Node, start, end Position) Node {
 	if init == nil {
 		init = DummyNode
 	}
-	if cond == nil {
-		cond = DummyNode
+	if condition == nil {
+		condition = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
@@ -8689,11 +8440,11 @@ func NewIfStmtNode(filePath string, fileContent []rune, init Node, cond Node, bo
 		else_ = DummyNode
 	}
 	_1 := &IfStmtNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeIfStmt, start, end),
-		init:     init,
-		cond:     cond,
-		body:     body,
-		else_:    else_,
+		BaseNode:  NewBaseNode(filePath, fileContent, NodeTypeIfStmt, start, end),
+		init:      init,
+		condition: condition,
+		body:      body,
+		else_:     else_,
 	}
 	creationHook(_1)
 	return _1
@@ -8701,10 +8452,10 @@ func NewIfStmtNode(filePath string, fileContent []rune, init Node, cond Node, bo
 
 type IfStmtNode struct {
 	*BaseNode
-	init  Node
-	cond  Node
-	body  Node
-	else_ Node
+	init      Node
+	condition Node
+	body      Node
+	else_     Node
 }
 
 func (n *IfStmtNode) Init() Node {
@@ -8715,12 +8466,12 @@ func (n *IfStmtNode) SetInit(v Node) {
 	n.init = v
 }
 
-func (n *IfStmtNode) Cond() Node {
-	return n.cond
+func (n *IfStmtNode) Condition() Node {
+	return n.condition
 }
 
-func (n *IfStmtNode) SetCond(v Node) {
-	n.cond = v
+func (n *IfStmtNode) SetCondition(v Node) {
+	n.condition = v
 }
 
 func (n *IfStmtNode) Body() Node {
@@ -8749,13 +8500,13 @@ func (n *IfStmtNode) BuildLink() {
 			n.Parent().(*IfStmtNode).SetInit(n)
 		})
 	}
-	if !n.Cond().IsDummy() {
-		cond := n.Cond()
-		cond.BuildLink()
-		cond.SetParent(n)
-		cond.SetSelfField("cond")
-		cond.SetReplaceSelf(func(n Node) {
-			n.Parent().(*IfStmtNode).SetCond(n)
+	if !n.Condition().IsDummy() {
+		condition := n.Condition()
+		condition.BuildLink()
+		condition.SetParent(n)
+		condition.SetSelfField("condition")
+		condition.SetReplaceSelf(func(n Node) {
+			n.Parent().(*IfStmtNode).SetCondition(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -8781,7 +8532,7 @@ func (n *IfStmtNode) BuildLink() {
 func (n *IfStmtNode) Fields() []string {
 	return []string{
 		"init",
-		"cond",
+		"condition",
 		"body",
 		"else_",
 	}
@@ -8794,8 +8545,8 @@ func (n *IfStmtNode) Child(field string) Node {
 	if field == "init" {
 		return n.Init()
 	}
-	if field == "cond" {
-		return n.Cond()
+	if field == "condition" {
+		return n.Condition()
 	}
 	if field == "body" {
 		return n.Body()
@@ -8811,21 +8562,21 @@ func (n *IfStmtNode) SetChild(nodes []Node) {
 		return
 	}
 	n.SetInit(nodes[0])
-	n.SetCond(nodes[1])
+	n.SetCondition(nodes[1])
 	n.SetBody(nodes[2])
 	n.SetElse(nodes[3])
 }
 
 func (n *IfStmtNode) Fork() Node {
 	_ret := &IfStmtNode{
-		BaseNode: n.BaseNode.fork(),
-		init:     n.init.Fork(),
-		cond:     n.cond.Fork(),
-		body:     n.body.Fork(),
-		else_:    n.else_.Fork(),
+		BaseNode:  n.BaseNode.fork(),
+		init:      n.init.Fork(),
+		condition: n.condition.Fork(),
+		body:      n.body.Fork(),
+		else_:     n.else_.Fork(),
 	}
 	_ret.init.SetParent(_ret)
-	_ret.cond.SetParent(_ret)
+	_ret.condition.SetParent(_ret)
 	_ret.body.SetParent(_ret)
 	_ret.else_.SetParent(_ret)
 	return _ret
@@ -8842,7 +8593,7 @@ func (n *IfStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit b
 	if n.init.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.cond.Visit(beforeChildren, afterChildren) {
+	if n.condition.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if n.body.Visit(beforeChildren, afterChildren) {
@@ -8861,31 +8612,31 @@ func (n *IfStmtNode) Dump(hook func(Node, map[string]string) string) map[string]
 	ret := make(map[string]string)
 	ret["kind"] = "\"if_stmt\""
 	ret["init"] = DumpNode(n.Init(), hook)
-	ret["cond"] = DumpNode(n.Cond(), hook)
+	ret["condition"] = DumpNode(n.Condition(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	ret["else"] = DumpNode(n.Else(), hook)
 	return ret
 }
 
-func NewForStmtNode(filePath string, fileContent []rune, init Node, cond Node, post Node, body Node, start, end Position) Node {
+func NewForStmtNode(filePath string, fileContent []rune, init Node, condition Node, update Node, body Node, start, end Position) Node {
 	if init == nil {
 		init = DummyNode
 	}
-	if cond == nil {
-		cond = DummyNode
+	if condition == nil {
+		condition = DummyNode
 	}
-	if post == nil {
-		post = DummyNode
+	if update == nil {
+		update = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
 	}
 	_1 := &ForStmtNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeForStmt, start, end),
-		init:     init,
-		cond:     cond,
-		post:     post,
-		body:     body,
+		BaseNode:  NewBaseNode(filePath, fileContent, NodeTypeForStmt, start, end),
+		init:      init,
+		condition: condition,
+		update:    update,
+		body:      body,
 	}
 	creationHook(_1)
 	return _1
@@ -8893,10 +8644,10 @@ func NewForStmtNode(filePath string, fileContent []rune, init Node, cond Node, p
 
 type ForStmtNode struct {
 	*BaseNode
-	init Node
-	cond Node
-	post Node
-	body Node
+	init      Node
+	condition Node
+	update    Node
+	body      Node
 }
 
 func (n *ForStmtNode) Init() Node {
@@ -8907,20 +8658,20 @@ func (n *ForStmtNode) SetInit(v Node) {
 	n.init = v
 }
 
-func (n *ForStmtNode) Cond() Node {
-	return n.cond
+func (n *ForStmtNode) Condition() Node {
+	return n.condition
 }
 
-func (n *ForStmtNode) SetCond(v Node) {
-	n.cond = v
+func (n *ForStmtNode) SetCondition(v Node) {
+	n.condition = v
 }
 
-func (n *ForStmtNode) Post() Node {
-	return n.post
+func (n *ForStmtNode) Update() Node {
+	return n.update
 }
 
-func (n *ForStmtNode) SetPost(v Node) {
-	n.post = v
+func (n *ForStmtNode) SetUpdate(v Node) {
+	n.update = v
 }
 
 func (n *ForStmtNode) Body() Node {
@@ -8941,22 +8692,22 @@ func (n *ForStmtNode) BuildLink() {
 			n.Parent().(*ForStmtNode).SetInit(n)
 		})
 	}
-	if !n.Cond().IsDummy() {
-		cond := n.Cond()
-		cond.BuildLink()
-		cond.SetParent(n)
-		cond.SetSelfField("cond")
-		cond.SetReplaceSelf(func(n Node) {
-			n.Parent().(*ForStmtNode).SetCond(n)
+	if !n.Condition().IsDummy() {
+		condition := n.Condition()
+		condition.BuildLink()
+		condition.SetParent(n)
+		condition.SetSelfField("condition")
+		condition.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForStmtNode).SetCondition(n)
 		})
 	}
-	if !n.Post().IsDummy() {
-		post := n.Post()
-		post.BuildLink()
-		post.SetParent(n)
-		post.SetSelfField("post")
-		post.SetReplaceSelf(func(n Node) {
-			n.Parent().(*ForStmtNode).SetPost(n)
+	if !n.Update().IsDummy() {
+		update := n.Update()
+		update.BuildLink()
+		update.SetParent(n)
+		update.SetSelfField("update")
+		update.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForStmtNode).SetUpdate(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -8973,8 +8724,8 @@ func (n *ForStmtNode) BuildLink() {
 func (n *ForStmtNode) Fields() []string {
 	return []string{
 		"init",
-		"cond",
-		"post",
+		"condition",
+		"update",
 		"body",
 	}
 }
@@ -8986,11 +8737,11 @@ func (n *ForStmtNode) Child(field string) Node {
 	if field == "init" {
 		return n.Init()
 	}
-	if field == "cond" {
-		return n.Cond()
+	if field == "condition" {
+		return n.Condition()
 	}
-	if field == "post" {
-		return n.Post()
+	if field == "update" {
+		return n.Update()
 	}
 	if field == "body" {
 		return n.Body()
@@ -9003,22 +8754,22 @@ func (n *ForStmtNode) SetChild(nodes []Node) {
 		return
 	}
 	n.SetInit(nodes[0])
-	n.SetCond(nodes[1])
-	n.SetPost(nodes[2])
+	n.SetCondition(nodes[1])
+	n.SetUpdate(nodes[2])
 	n.SetBody(nodes[3])
 }
 
 func (n *ForStmtNode) Fork() Node {
 	_ret := &ForStmtNode{
-		BaseNode: n.BaseNode.fork(),
-		init:     n.init.Fork(),
-		cond:     n.cond.Fork(),
-		post:     n.post.Fork(),
-		body:     n.body.Fork(),
+		BaseNode:  n.BaseNode.fork(),
+		init:      n.init.Fork(),
+		condition: n.condition.Fork(),
+		update:    n.update.Fork(),
+		body:      n.body.Fork(),
 	}
 	_ret.init.SetParent(_ret)
-	_ret.cond.SetParent(_ret)
-	_ret.post.SetParent(_ret)
+	_ret.condition.SetParent(_ret)
+	_ret.update.SetParent(_ret)
 	_ret.body.SetParent(_ret)
 	return _ret
 }
@@ -9034,10 +8785,10 @@ func (n *ForStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit 
 	if n.init.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.cond.Visit(beforeChildren, afterChildren) {
+	if n.condition.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.post.Visit(beforeChildren, afterChildren) {
+	if n.update.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if n.body.Visit(beforeChildren, afterChildren) {
@@ -9053,8 +8804,8 @@ func (n *ForStmtNode) Dump(hook func(Node, map[string]string) string) map[string
 	ret := make(map[string]string)
 	ret["kind"] = "\"for_stmt\""
 	ret["init"] = DumpNode(n.Init(), hook)
-	ret["cond"] = DumpNode(n.Cond(), hook)
-	ret["post"] = DumpNode(n.Post(), hook)
+	ret["condition"] = DumpNode(n.Condition(), hook)
+	ret["update"] = DumpNode(n.Update(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
 }
@@ -9536,21 +9287,21 @@ func (n *SelectStmtNode) Dump(hook func(Node, map[string]string) string) map[str
 	return ret
 }
 
-func NewSwitchStmtNode(filePath string, fileContent []rune, init Node, tag Node, body Node, start, end Position) Node {
+func NewSwitchStmtNode(filePath string, fileContent []rune, init Node, expression Node, body Node, start, end Position) Node {
 	if init == nil {
 		init = DummyNode
 	}
-	if tag == nil {
-		tag = DummyNode
+	if expression == nil {
+		expression = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
 	}
 	_1 := &SwitchStmtNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeSwitchStmt, start, end),
-		init:     init,
-		tag:      tag,
-		body:     body,
+		BaseNode:   NewBaseNode(filePath, fileContent, NodeTypeSwitchStmt, start, end),
+		init:       init,
+		expression: expression,
+		body:       body,
 	}
 	creationHook(_1)
 	return _1
@@ -9558,9 +9309,9 @@ func NewSwitchStmtNode(filePath string, fileContent []rune, init Node, tag Node,
 
 type SwitchStmtNode struct {
 	*BaseNode
-	init Node
-	tag  Node
-	body Node
+	init       Node
+	expression Node
+	body       Node
 }
 
 func (n *SwitchStmtNode) Init() Node {
@@ -9571,12 +9322,12 @@ func (n *SwitchStmtNode) SetInit(v Node) {
 	n.init = v
 }
 
-func (n *SwitchStmtNode) Tag() Node {
-	return n.tag
+func (n *SwitchStmtNode) Expression() Node {
+	return n.expression
 }
 
-func (n *SwitchStmtNode) SetTag(v Node) {
-	n.tag = v
+func (n *SwitchStmtNode) SetExpression(v Node) {
+	n.expression = v
 }
 
 func (n *SwitchStmtNode) Body() Node {
@@ -9597,13 +9348,13 @@ func (n *SwitchStmtNode) BuildLink() {
 			n.Parent().(*SwitchStmtNode).SetInit(n)
 		})
 	}
-	if !n.Tag().IsDummy() {
-		tag := n.Tag()
-		tag.BuildLink()
-		tag.SetParent(n)
-		tag.SetSelfField("tag")
-		tag.SetReplaceSelf(func(n Node) {
-			n.Parent().(*SwitchStmtNode).SetTag(n)
+	if !n.Expression().IsDummy() {
+		expression := n.Expression()
+		expression.BuildLink()
+		expression.SetParent(n)
+		expression.SetSelfField("expression")
+		expression.SetReplaceSelf(func(n Node) {
+			n.Parent().(*SwitchStmtNode).SetExpression(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -9620,7 +9371,7 @@ func (n *SwitchStmtNode) BuildLink() {
 func (n *SwitchStmtNode) Fields() []string {
 	return []string{
 		"init",
-		"tag",
+		"expression",
 		"body",
 	}
 }
@@ -9632,8 +9383,8 @@ func (n *SwitchStmtNode) Child(field string) Node {
 	if field == "init" {
 		return n.Init()
 	}
-	if field == "tag" {
-		return n.Tag()
+	if field == "expression" {
+		return n.Expression()
 	}
 	if field == "body" {
 		return n.Body()
@@ -9646,19 +9397,19 @@ func (n *SwitchStmtNode) SetChild(nodes []Node) {
 		return
 	}
 	n.SetInit(nodes[0])
-	n.SetTag(nodes[1])
+	n.SetExpression(nodes[1])
 	n.SetBody(nodes[2])
 }
 
 func (n *SwitchStmtNode) Fork() Node {
 	_ret := &SwitchStmtNode{
-		BaseNode: n.BaseNode.fork(),
-		init:     n.init.Fork(),
-		tag:      n.tag.Fork(),
-		body:     n.body.Fork(),
+		BaseNode:   n.BaseNode.fork(),
+		init:       n.init.Fork(),
+		expression: n.expression.Fork(),
+		body:       n.body.Fork(),
 	}
 	_ret.init.SetParent(_ret)
-	_ret.tag.SetParent(_ret)
+	_ret.expression.SetParent(_ret)
 	_ret.body.SetParent(_ret)
 	return _ret
 }
@@ -9674,7 +9425,7 @@ func (n *SwitchStmtNode) Visit(beforeChildren func(node Node) (visitChildren, ex
 	if n.init.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.tag.Visit(beforeChildren, afterChildren) {
+	if n.expression.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if n.body.Visit(beforeChildren, afterChildren) {
@@ -9690,17 +9441,17 @@ func (n *SwitchStmtNode) Dump(hook func(Node, map[string]string) string) map[str
 	ret := make(map[string]string)
 	ret["kind"] = "\"switch_stmt\""
 	ret["init"] = DumpNode(n.Init(), hook)
-	ret["tag"] = DumpNode(n.Tag(), hook)
+	ret["expression"] = DumpNode(n.Expression(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
 }
 
-func NewTypeSwitchStmtNode(filePath string, fileContent []rune, init Node, assign Node, body Node, start, end Position) Node {
+func NewTypeSwitchStmtNode(filePath string, fileContent []rune, init Node, guard Node, body Node, start, end Position) Node {
 	if init == nil {
 		init = DummyNode
 	}
-	if assign == nil {
-		assign = DummyNode
+	if guard == nil {
+		guard = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
@@ -9708,7 +9459,7 @@ func NewTypeSwitchStmtNode(filePath string, fileContent []rune, init Node, assig
 	_1 := &TypeSwitchStmtNode{
 		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeTypeSwitchStmt, start, end),
 		init:     init,
-		assign:   assign,
+		guard:    guard,
 		body:     body,
 	}
 	creationHook(_1)
@@ -9717,9 +9468,9 @@ func NewTypeSwitchStmtNode(filePath string, fileContent []rune, init Node, assig
 
 type TypeSwitchStmtNode struct {
 	*BaseNode
-	init   Node
-	assign Node
-	body   Node
+	init  Node
+	guard Node
+	body  Node
 }
 
 func (n *TypeSwitchStmtNode) Init() Node {
@@ -9730,12 +9481,12 @@ func (n *TypeSwitchStmtNode) SetInit(v Node) {
 	n.init = v
 }
 
-func (n *TypeSwitchStmtNode) Assign() Node {
-	return n.assign
+func (n *TypeSwitchStmtNode) Guard() Node {
+	return n.guard
 }
 
-func (n *TypeSwitchStmtNode) SetAssign(v Node) {
-	n.assign = v
+func (n *TypeSwitchStmtNode) SetGuard(v Node) {
+	n.guard = v
 }
 
 func (n *TypeSwitchStmtNode) Body() Node {
@@ -9756,13 +9507,13 @@ func (n *TypeSwitchStmtNode) BuildLink() {
 			n.Parent().(*TypeSwitchStmtNode).SetInit(n)
 		})
 	}
-	if !n.Assign().IsDummy() {
-		assign := n.Assign()
-		assign.BuildLink()
-		assign.SetParent(n)
-		assign.SetSelfField("assign")
-		assign.SetReplaceSelf(func(n Node) {
-			n.Parent().(*TypeSwitchStmtNode).SetAssign(n)
+	if !n.Guard().IsDummy() {
+		guard := n.Guard()
+		guard.BuildLink()
+		guard.SetParent(n)
+		guard.SetSelfField("guard")
+		guard.SetReplaceSelf(func(n Node) {
+			n.Parent().(*TypeSwitchStmtNode).SetGuard(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -9779,7 +9530,7 @@ func (n *TypeSwitchStmtNode) BuildLink() {
 func (n *TypeSwitchStmtNode) Fields() []string {
 	return []string{
 		"init",
-		"assign",
+		"guard",
 		"body",
 	}
 }
@@ -9791,8 +9542,8 @@ func (n *TypeSwitchStmtNode) Child(field string) Node {
 	if field == "init" {
 		return n.Init()
 	}
-	if field == "assign" {
-		return n.Assign()
+	if field == "guard" {
+		return n.Guard()
 	}
 	if field == "body" {
 		return n.Body()
@@ -9805,7 +9556,7 @@ func (n *TypeSwitchStmtNode) SetChild(nodes []Node) {
 		return
 	}
 	n.SetInit(nodes[0])
-	n.SetAssign(nodes[1])
+	n.SetGuard(nodes[1])
 	n.SetBody(nodes[2])
 }
 
@@ -9813,11 +9564,11 @@ func (n *TypeSwitchStmtNode) Fork() Node {
 	_ret := &TypeSwitchStmtNode{
 		BaseNode: n.BaseNode.fork(),
 		init:     n.init.Fork(),
-		assign:   n.assign.Fork(),
+		guard:    n.guard.Fork(),
 		body:     n.body.Fork(),
 	}
 	_ret.init.SetParent(_ret)
-	_ret.assign.SetParent(_ret)
+	_ret.guard.SetParent(_ret)
 	_ret.body.SetParent(_ret)
 	return _ret
 }
@@ -9833,7 +9584,7 @@ func (n *TypeSwitchStmtNode) Visit(beforeChildren func(node Node) (visitChildren
 	if n.init.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.assign.Visit(beforeChildren, afterChildren) {
+	if n.guard.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if n.body.Visit(beforeChildren, afterChildren) {
@@ -9849,7 +9600,604 @@ func (n *TypeSwitchStmtNode) Dump(hook func(Node, map[string]string) string) map
 	ret := make(map[string]string)
 	ret["kind"] = "\"type_switch_stmt\""
 	ret["init"] = DumpNode(n.Init(), hook)
-	ret["assign"] = DumpNode(n.Assign(), hook)
+	ret["guard"] = DumpNode(n.Guard(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewTypeSwitchGuardNode(filePath string, fileContent []rune, name Node, expression Node, start, end Position) Node {
+	if name == nil {
+		name = DummyNode
+	}
+	if expression == nil {
+		expression = DummyNode
+	}
+	_1 := &TypeSwitchGuardNode{
+		BaseNode:   NewBaseNode(filePath, fileContent, NodeTypeTypeSwitchGuard, start, end),
+		name:       name,
+		expression: expression,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type TypeSwitchGuardNode struct {
+	*BaseNode
+	name       Node
+	expression Node
+}
+
+func (n *TypeSwitchGuardNode) Name() Node {
+	return n.name
+}
+
+func (n *TypeSwitchGuardNode) SetName(v Node) {
+	n.name = v
+}
+
+func (n *TypeSwitchGuardNode) Expression() Node {
+	return n.expression
+}
+
+func (n *TypeSwitchGuardNode) SetExpression(v Node) {
+	n.expression = v
+}
+
+func (n *TypeSwitchGuardNode) BuildLink() {
+	if !n.Name().IsDummy() {
+		name := n.Name()
+		name.BuildLink()
+		name.SetParent(n)
+		name.SetSelfField("name")
+		name.SetReplaceSelf(func(n Node) {
+			n.Parent().(*TypeSwitchGuardNode).SetName(n)
+		})
+	}
+	if !n.Expression().IsDummy() {
+		expression := n.Expression()
+		expression.BuildLink()
+		expression.SetParent(n)
+		expression.SetSelfField("expression")
+		expression.SetReplaceSelf(func(n Node) {
+			n.Parent().(*TypeSwitchGuardNode).SetExpression(n)
+		})
+	}
+}
+
+func (n *TypeSwitchGuardNode) Fields() []string {
+	return []string{
+		"name",
+		"expression",
+	}
+}
+
+func (n *TypeSwitchGuardNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "name" {
+		return n.Name()
+	}
+	if field == "expression" {
+		return n.Expression()
+	}
+	return nil
+}
+
+func (n *TypeSwitchGuardNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetName(nodes[0])
+	n.SetExpression(nodes[1])
+}
+
+func (n *TypeSwitchGuardNode) Fork() Node {
+	_ret := &TypeSwitchGuardNode{
+		BaseNode:   n.BaseNode.fork(),
+		name:       n.name.Fork(),
+		expression: n.expression.Fork(),
+	}
+	_ret.name.SetParent(_ret)
+	_ret.expression.SetParent(_ret)
+	return _ret
+}
+
+func (n *TypeSwitchGuardNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.name.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.expression.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *TypeSwitchGuardNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"type_switch_guard\""
+	ret["name"] = DumpNode(n.Name(), hook)
+	ret["expression"] = DumpNode(n.Expression(), hook)
+	return ret
+}
+
+func NewDefaultClauseNode(filePath string, fileContent []rune, body Node, start, end Position) Node {
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &DefaultClauseNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeDefaultClause, start, end),
+		body:     body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type DefaultClauseNode struct {
+	*BaseNode
+	body Node
+}
+
+func (n *DefaultClauseNode) Body() Node {
+	return n.body
+}
+
+func (n *DefaultClauseNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *DefaultClauseNode) BuildLink() {
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*DefaultClauseNode).SetBody(n)
+		})
+	}
+}
+
+func (n *DefaultClauseNode) Fields() []string {
+	return []string{
+		"body",
+	}
+}
+
+func (n *DefaultClauseNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *DefaultClauseNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
+		return
+	}
+	n.SetBody(nodes[0])
+}
+
+func (n *DefaultClauseNode) Fork() Node {
+	_ret := &DefaultClauseNode{
+		BaseNode: n.BaseNode.fork(),
+		body:     n.body.Fork(),
+	}
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *DefaultClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *DefaultClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"default_clause\""
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewExprCaseClauseNode(filePath string, fileContent []rune, condition Node, body Node, start, end Position) Node {
+	if condition == nil {
+		condition = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &ExprCaseClauseNode{
+		BaseNode:  NewBaseNode(filePath, fileContent, NodeTypeExprCaseClause, start, end),
+		condition: condition,
+		body:      body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ExprCaseClauseNode struct {
+	*BaseNode
+	condition Node
+	body      Node
+}
+
+func (n *ExprCaseClauseNode) Condition() Node {
+	return n.condition
+}
+
+func (n *ExprCaseClauseNode) SetCondition(v Node) {
+	n.condition = v
+}
+
+func (n *ExprCaseClauseNode) Body() Node {
+	return n.body
+}
+
+func (n *ExprCaseClauseNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *ExprCaseClauseNode) BuildLink() {
+	if !n.Condition().IsDummy() {
+		condition := n.Condition()
+		condition.BuildLink()
+		condition.SetParent(n)
+		condition.SetSelfField("condition")
+		condition.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ExprCaseClauseNode).SetCondition(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ExprCaseClauseNode).SetBody(n)
+		})
+	}
+}
+
+func (n *ExprCaseClauseNode) Fields() []string {
+	return []string{
+		"condition",
+		"body",
+	}
+}
+
+func (n *ExprCaseClauseNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "condition" {
+		return n.Condition()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *ExprCaseClauseNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetCondition(nodes[0])
+	n.SetBody(nodes[1])
+}
+
+func (n *ExprCaseClauseNode) Fork() Node {
+	_ret := &ExprCaseClauseNode{
+		BaseNode:  n.BaseNode.fork(),
+		condition: n.condition.Fork(),
+		body:      n.body.Fork(),
+	}
+	_ret.condition.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *ExprCaseClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.condition.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ExprCaseClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"expr_case_clause\""
+	ret["condition"] = DumpNode(n.Condition(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewSelectCaseClauseNode(filePath string, fileContent []rune, condition Node, body Node, start, end Position) Node {
+	if condition == nil {
+		condition = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &SelectCaseClauseNode{
+		BaseNode:  NewBaseNode(filePath, fileContent, NodeTypeSelectCaseClause, start, end),
+		condition: condition,
+		body:      body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type SelectCaseClauseNode struct {
+	*BaseNode
+	condition Node
+	body      Node
+}
+
+func (n *SelectCaseClauseNode) Condition() Node {
+	return n.condition
+}
+
+func (n *SelectCaseClauseNode) SetCondition(v Node) {
+	n.condition = v
+}
+
+func (n *SelectCaseClauseNode) Body() Node {
+	return n.body
+}
+
+func (n *SelectCaseClauseNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *SelectCaseClauseNode) BuildLink() {
+	if !n.Condition().IsDummy() {
+		condition := n.Condition()
+		condition.BuildLink()
+		condition.SetParent(n)
+		condition.SetSelfField("condition")
+		condition.SetReplaceSelf(func(n Node) {
+			n.Parent().(*SelectCaseClauseNode).SetCondition(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*SelectCaseClauseNode).SetBody(n)
+		})
+	}
+}
+
+func (n *SelectCaseClauseNode) Fields() []string {
+	return []string{
+		"condition",
+		"body",
+	}
+}
+
+func (n *SelectCaseClauseNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "condition" {
+		return n.Condition()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *SelectCaseClauseNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetCondition(nodes[0])
+	n.SetBody(nodes[1])
+}
+
+func (n *SelectCaseClauseNode) Fork() Node {
+	_ret := &SelectCaseClauseNode{
+		BaseNode:  n.BaseNode.fork(),
+		condition: n.condition.Fork(),
+		body:      n.body.Fork(),
+	}
+	_ret.condition.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *SelectCaseClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.condition.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *SelectCaseClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"select_case_clause\""
+	ret["condition"] = DumpNode(n.Condition(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
+	return ret
+}
+
+func NewTypeCaseClauseNode(filePath string, fileContent []rune, types Node, body Node, start, end Position) Node {
+	if types == nil {
+		types = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &TypeCaseClauseNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeTypeCaseClause, start, end),
+		types:    types,
+		body:     body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type TypeCaseClauseNode struct {
+	*BaseNode
+	types Node
+	body  Node
+}
+
+func (n *TypeCaseClauseNode) Types() Node {
+	return n.types
+}
+
+func (n *TypeCaseClauseNode) SetTypes(v Node) {
+	n.types = v
+}
+
+func (n *TypeCaseClauseNode) Body() Node {
+	return n.body
+}
+
+func (n *TypeCaseClauseNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *TypeCaseClauseNode) BuildLink() {
+	if !n.Types().IsDummy() {
+		types := n.Types()
+		types.BuildLink()
+		types.SetParent(n)
+		types.SetSelfField("types")
+		types.SetReplaceSelf(func(n Node) {
+			n.Parent().(*TypeCaseClauseNode).SetTypes(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*TypeCaseClauseNode).SetBody(n)
+		})
+	}
+}
+
+func (n *TypeCaseClauseNode) Fields() []string {
+	return []string{
+		"types",
+		"body",
+	}
+}
+
+func (n *TypeCaseClauseNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "types" {
+		return n.Types()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *TypeCaseClauseNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetTypes(nodes[0])
+	n.SetBody(nodes[1])
+}
+
+func (n *TypeCaseClauseNode) Fork() Node {
+	_ret := &TypeCaseClauseNode{
+		BaseNode: n.BaseNode.fork(),
+		types:    n.types.Fork(),
+		body:     n.body.Fork(),
+	}
+	_ret.types.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *TypeCaseClauseNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.types.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *TypeCaseClauseNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"type_case_clause\""
+	ret["types"] = DumpNode(n.Types(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
 }
@@ -15050,7 +15398,7 @@ func (ps *Parser) ifStmt() Node {
 /*
 for_stmt:
 | 'for' [ c=expression? ] b=block {for_stmt(_,c,_,b)}
-| 'for' [ i=simple_stmt? ';' c=expression? ';' post=simple_stmt? ] b=block {for_stmt(i,c,post,b)}
+| 'for' [ i=simple_stmt? ';' c=expression? ';' u=simple_stmt? ] b=block {for_stmt(i,c,u,b)}
 | 'for' [ (k=expression (',' v=expression)?)? ':=' 'range' x=expression ] b=block {for_decl_range_stmt(k,v,x,b)}
 | 'for' [ (k=expression (',' v=expression)?)? '=' 'range' x=expression ] b=block {for_assign_range_stmt(k,v,x,b)}
 */
@@ -15085,13 +15433,13 @@ func (ps *Parser) forStmt() Node {
 		return NewForStmtNode(ps._filePath, ps._fileContent, nil, c, nil, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'for' [ i=simple_stmt? ';' c=expression? ';' post=simple_stmt? ] b=block {for_stmt(i,c,post,b)}
+	/* 'for' [ i=simple_stmt? ';' c=expression? ';' u=simple_stmt? ] b=block {for_stmt(i,c,u,b)}
 	 */
 	for {
 		var b Node
 		var c Node
 		var i Node
-		var post Node
+		var u Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwFor)
 		if _1 == nil {
@@ -15114,8 +15462,8 @@ func (ps *Parser) forStmt() Node {
 			if _3 == nil {
 				break
 			}
-			post = ps.simpleStmt()
-			_ = post
+			u = ps.simpleStmt()
+			_ = u
 			_break = false
 			break
 		}
@@ -15127,7 +15475,7 @@ func (ps *Parser) forStmt() Node {
 		if b == nil {
 			break
 		}
-		return NewForStmtNode(ps._filePath, ps._fileContent, i, c, post, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewForStmtNode(ps._filePath, ps._fileContent, i, c, u, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	/* 'for' [ (k=expression (',' v=expression)?)? ':=' 'range' x=expression ] b=block {for_decl_range_stmt(k,v,x,b)}
@@ -15305,74 +15653,53 @@ func (ps *Parser) forStmt() Node {
 
 /*
 select_stmt:
-| 'select' b=select_body {select_stmt(b)}
+| 'select' '{' s=select_case_clause* '}' {select_stmt(s)}
 */
 func (ps *Parser) selectStmt() Node {
-	/* 'select' b=select_body {select_stmt(b)}
+	/* 'select' '{' s=select_case_clause* '}' {select_stmt(s)}
 	 */
 	pos := ps._mark()
 	for {
-		var b Node
+		var s Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwSelect)
 		if _1 == nil {
 			break
 		}
-		b = ps.selectBody()
-		if b == nil {
+		var _2 Node
+		_2 = ps._expectK(TokenTypeOpLeftBrace)
+		if _2 == nil {
 			break
 		}
-		return NewSelectStmtNode(ps._filePath, ps._fileContent, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-select_body:
-| '{' cases=common_clause* '}' {block_stmt(cases)}
-*/
-func (ps *Parser) selectBody() Node {
-	/* '{' cases=common_clause* '}' {block_stmt(cases)}
-	 */
-	pos := ps._mark()
-	for {
-		var cases Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
-		if _1 == nil {
-			break
-		}
-		_2 := make([]Node, 0)
-		var _3 Node
+		_3 := make([]Node, 0)
+		var _4 Node
 		for {
-			_3 = ps.commonClause()
-			if _3 == nil {
+			_4 = ps.selectCaseClause()
+			if _4 == nil {
 				break
 			}
-			_2 = append(_2, _3)
+			_3 = append(_3, _4)
 		}
-		cases = NewNodesNode(_2)
-		_ = cases
-		var _4 Node
-		_4 = ps._expectK(TokenTypeOpRightBrace)
-		if _4 == nil {
+		s = NewNodesNode(_3)
+		_ = s
+		var _5 Node
+		_5 = ps._expectK(TokenTypeOpRightBrace)
+		if _5 == nil {
 			break
 		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, cases, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewSelectStmtNode(ps._filePath, ps._fileContent, s, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
 }
 
 /*
-common_clause:
-| 'case' x=send_stmt ':' y=statement_semi_list? {common_clause(x,y)}
-| 'case' x=recv_stmt ':' y=statement_semi_list? {common_clause(x,y)}
-| 'default' ':' x=statement_semi_list? {common_clause(_,x)}
+select_case_clause:
+| 'case' x=select_case_condition ':' y=statement_semi_list? {select_case_clause(x,y)}
+| 'default' ':' x=statement_semi_list? {default_clause(x)}
 */
-func (ps *Parser) commonClause() Node {
-	/* 'case' x=send_stmt ':' y=statement_semi_list? {common_clause(x,y)}
+func (ps *Parser) selectCaseClause() Node {
+	/* 'case' x=select_case_condition ':' y=statement_semi_list? {select_case_clause(x,y)}
 	 */
 	pos := ps._mark()
 	for {
@@ -15383,7 +15710,7 @@ func (ps *Parser) commonClause() Node {
 		if _1 == nil {
 			break
 		}
-		x = ps.sendStmt()
+		x = ps.selectCaseCondition()
 		if x == nil {
 			break
 		}
@@ -15394,34 +15721,10 @@ func (ps *Parser) commonClause() Node {
 		}
 		y = ps.statementSemiList()
 		_ = y
-		return NewCommonClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewSelectCaseClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'case' x=recv_stmt ':' y=statement_semi_list? {common_clause(x,y)}
-	 */
-	for {
-		var x Node
-		var y Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwCase)
-		if _1 == nil {
-			break
-		}
-		x = ps.recvStmt()
-		if x == nil {
-			break
-		}
-		var _2 Node
-		_2 = ps._expectK(TokenTypeOpColon)
-		if _2 == nil {
-			break
-		}
-		y = ps.statementSemiList()
-		_ = y
-		return NewCommonClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* 'default' ':' x=statement_semi_list? {common_clause(_,x)}
+	/* 'default' ':' x=statement_semi_list? {default_clause(x)}
 	 */
 	for {
 		var x Node
@@ -15437,125 +15740,75 @@ func (ps *Parser) commonClause() Node {
 		}
 		x = ps.statementSemiList()
 		_ = x
-		return NewCommonClauseNode(ps._filePath, ps._fileContent, nil, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewDefaultClauseNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
 }
 
 /*
-recv_stmt:
-| x=expression_list op='=' y=expression {assign_stmt(x, op, [y])}
-| x=identifier_list op=':=' y=expression {assign_stmt(x, op, [y])}
-| x=expression {expr_stmt(x)}
+select_case_condition:
+| send_stmt
+| assignment
+| short_var_decl
+| expression_stmt
 */
-func (ps *Parser) recvStmt() Node {
-	/* x=expression_list op='=' y=expression {assign_stmt(x, op, [y])}
-	 */
-	pos := ps._mark()
-	for {
-		var op Node
-		var x Node
-		var y Node
-		x = ps.expressionList()
-		if x == nil {
-			break
-		}
-		op = ps._expectK(TokenTypeOpEqual)
-		if op == nil {
-			break
-		}
-		y = ps.expression()
-		if y == nil {
-			break
-		}
-		return NewAssignStmtNode(ps._filePath, ps._fileContent, x, op, NewNodesNode([]Node{y}), ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x=identifier_list op=':=' y=expression {assign_stmt(x, op, [y])}
+func (ps *Parser) selectCaseCondition() Node {
+	/* send_stmt
 	 */
 	for {
-		var op Node
-		var x Node
-		var y Node
-		x = ps.identifierList()
-		if x == nil {
-			break
-		}
-		op = ps._expectK(TokenTypeOpColonEqual)
-		if op == nil {
-			break
-		}
-		y = ps.expression()
-		if y == nil {
-			break
-		}
-		return NewAssignStmtNode(ps._filePath, ps._fileContent, x, op, NewNodesNode([]Node{y}), ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x=expression {expr_stmt(x)}
-	 */
-	for {
-		var x Node
-		x = ps.expression()
-		if x == nil {
-			break
-		}
-		return NewExprStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-type_switch_body:
-| '{' cases=type_case_clause* '}' {block_stmt(cases)}
-*/
-func (ps *Parser) typeSwitchBody() Node {
-	/* '{' cases=type_case_clause* '}' {block_stmt(cases)}
-	 */
-	pos := ps._mark()
-	for {
-		var cases Node
 		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
+		_1 = ps.sendStmt()
 		if _1 == nil {
 			break
 		}
-		_2 := make([]Node, 0)
-		var _3 Node
-		for {
-			_3 = ps.typeCaseClause()
-			if _3 == nil {
-				break
-			}
-			_2 = append(_2, _3)
-		}
-		cases = NewNodesNode(_2)
-		_ = cases
-		var _4 Node
-		_4 = ps._expectK(TokenTypeOpRightBrace)
-		if _4 == nil {
+		return _1
+	}
+	/* assignment
+	 */
+	for {
+		var _1 Node
+		_1 = ps.assignment()
+		if _1 == nil {
 			break
 		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, cases, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return _1
 	}
-	ps._reset(pos)
+	/* short_var_decl
+	 */
+	for {
+		var _1 Node
+		_1 = ps.shortVarDecl()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* expression_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.expressionStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
 	return nil
 }
 
 /*
 type_switch_stmt:
-| 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] b=type_switch_body {type_switch_stmt(init,assign,b)}
+| 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] '{' s=type_case_clause* '}' {type_switch_stmt(init,assign,s)}
 */
 func (ps *Parser) typeSwitchStmt() Node {
-	/* 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] b=type_switch_body {type_switch_stmt(init,assign,b)}
+	/* 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] '{' s=type_case_clause* '}' {type_switch_stmt(init,assign,s)}
 	 */
 	pos := ps._mark()
 	for {
 		var assign Node
-		var b Node
 		var init Node
+		var s Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwSwitch)
 		if _1 == nil {
@@ -15598,51 +15851,28 @@ func (ps *Parser) typeSwitchStmt() Node {
 		if _break {
 			break
 		}
-		b = ps.typeSwitchBody()
-		if b == nil {
-			break
-		}
-		return NewTypeSwitchStmtNode(ps._filePath, ps._fileContent, init, assign, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-type_assert_expr:
-| r=primary_expr '.' '(' 'type' ')' {type_assert_expr(r,_)}
-*/
-func (ps *Parser) typeAssertExpr() Node {
-	/* r=primary_expr '.' '(' 'type' ')' {type_assert_expr(r,_)}
-	 */
-	pos := ps._mark()
-	for {
-		var r Node
-		r = ps.primaryExpr()
-		if r == nil {
-			break
-		}
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpDot)
-		if _1 == nil {
-			break
-		}
-		var _2 Node
-		_2 = ps._expectK(TokenTypeOpLeftParen)
-		if _2 == nil {
-			break
-		}
 		var _3 Node
-		_3 = ps._expectK(TokenTypeKwType)
+		_3 = ps._expectK(TokenTypeOpLeftBrace)
 		if _3 == nil {
 			break
 		}
-		var _4 Node
-		_4 = ps._expectK(TokenTypeOpRightParen)
-		if _4 == nil {
+		_4 := make([]Node, 0)
+		var _5 Node
+		for {
+			_5 = ps.typeCaseClause()
+			if _5 == nil {
+				break
+			}
+			_4 = append(_4, _5)
+		}
+		s = NewNodesNode(_4)
+		_ = s
+		var _6 Node
+		_6 = ps._expectK(TokenTypeOpRightBrace)
+		if _6 == nil {
 			break
 		}
-		return NewTypeAssertExprNode(ps._filePath, ps._fileContent, r, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewTypeSwitchStmtNode(ps._filePath, ps._fileContent, init, assign, s, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -15650,41 +15880,83 @@ func (ps *Parser) typeAssertExpr() Node {
 
 /*
 type_switch_guard:
-| l=IDENT op=':=' t=type_assert_expr {assign_stmt([l], op, [t])}
-| t=type_assert_expr {expr_stmt(t)}
+| (i=type_switch_guard_ident ':=')? r=primary_expr '.' '(' 'type' ')' {type_switch_guard(i, r)}
 */
 func (ps *Parser) typeSwitchGuard() Node {
-	/* l=IDENT op=':=' t=type_assert_expr {assign_stmt([l], op, [t])}
+	/* (i=type_switch_guard_ident ':=')? r=primary_expr '.' '(' 'type' ')' {type_switch_guard(i, r)}
 	 */
 	pos := ps._mark()
 	for {
-		var l Node
-		var op Node
-		var t Node
-		l = ps._expectK(TokenTypeIdent)
-		if l == nil {
+		var i Node
+		var r Node
+		var _1 Node
+		for {
+			_ok := false
+			_p := ps._mark()
+			for {
+				i = ps.typeSwitchGuardIdent()
+				if i == nil {
+					break
+				}
+				_1 = ps._expectK(TokenTypeOpColonEqual)
+				if _1 == nil {
+					break
+				}
+				_ok = true
+				break
+			}
+			if !_ok {
+				ps._reset(_p)
+				i = nil
+			}
 			break
 		}
-		op = ps._expectK(TokenTypeOpColonEqual)
-		if op == nil {
+		_ = _1
+		r = ps.primaryExpr()
+		if r == nil {
 			break
 		}
-		t = ps.typeAssertExpr()
-		if t == nil {
+		var _2 Node
+		_2 = ps._expectK(TokenTypeOpDot)
+		if _2 == nil {
 			break
 		}
-		return NewAssignStmtNode(ps._filePath, ps._fileContent, NewNodesNode([]Node{l}), op, NewNodesNode([]Node{t}), ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		var _3 Node
+		_3 = ps._expectK(TokenTypeOpLeftParen)
+		if _3 == nil {
+			break
+		}
+		var _4 Node
+		_4 = ps._expectK(TokenTypeKwType)
+		if _4 == nil {
+			break
+		}
+		var _5 Node
+		_5 = ps._expectK(TokenTypeOpRightParen)
+		if _5 == nil {
+			break
+		}
+		return NewTypeSwitchGuardNode(ps._filePath, ps._fileContent, i, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* t=type_assert_expr {expr_stmt(t)}
+	return nil
+}
+
+/*
+type_switch_guard_ident:
+| i=IDENT {type_switch_guard_ident(i)}
+*/
+func (ps *Parser) typeSwitchGuardIdent() Node {
+	/* i=IDENT {type_switch_guard_ident(i)}
 	 */
+	pos := ps._mark()
 	for {
-		var t Node
-		t = ps.typeAssertExpr()
-		if t == nil {
+		var i Node
+		i = ps._expectK(TokenTypeIdent)
+		if i == nil {
 			break
 		}
-		return NewExprStmtNode(ps._filePath, ps._fileContent, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewTypeSwitchGuardIdentNode(ps._filePath, ps._fileContent, i, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -15692,11 +15964,11 @@ func (ps *Parser) typeSwitchGuard() Node {
 
 /*
 type_case_clause:
-| 'case' x=','.type+ ':' y=statement_semi_list? {case_clause(x,y)}
-| 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+| 'case' x=','.type+ ':' y=statement_semi_list? {type_case_clause(x,y)}
+| 'default' ':' x=statement_semi_list? {default_clause(x)}
 */
 func (ps *Parser) typeCaseClause() Node {
-	/* 'case' x=','.type+ ':' y=statement_semi_list? {case_clause(x,y)}
+	/* 'case' x=','.type+ ':' y=statement_semi_list? {type_case_clause(x,y)}
 	 */
 	pos := ps._mark()
 	for {
@@ -15736,10 +16008,10 @@ func (ps *Parser) typeCaseClause() Node {
 		}
 		y = ps.statementSemiList()
 		_ = y
-		return NewCaseClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewTypeCaseClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+	/* 'default' ':' x=statement_semi_list? {default_clause(x)}
 	 */
 	for {
 		var x Node
@@ -15755,44 +16027,7 @@ func (ps *Parser) typeCaseClause() Node {
 		}
 		x = ps.statementSemiList()
 		_ = x
-		return NewCaseClauseNode(ps._filePath, ps._fileContent, nil, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-expr_switch_body:
-| '{' cases=expr_case_clause* '}' {block_stmt(cases)}
-*/
-func (ps *Parser) exprSwitchBody() Node {
-	/* '{' cases=expr_case_clause* '}' {block_stmt(cases)}
-	 */
-	pos := ps._mark()
-	for {
-		var cases Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
-		if _1 == nil {
-			break
-		}
-		_2 := make([]Node, 0)
-		var _3 Node
-		for {
-			_3 = ps.exprCaseClause()
-			if _3 == nil {
-				break
-			}
-			_2 = append(_2, _3)
-		}
-		cases = NewNodesNode(_2)
-		_ = cases
-		var _4 Node
-		_4 = ps._expectK(TokenTypeOpRightBrace)
-		if _4 == nil {
-			break
-		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, cases, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewDefaultClauseNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -15800,15 +16035,15 @@ func (ps *Parser) exprSwitchBody() Node {
 
 /*
 expr_switch_stmt:
-| 'switch' [ (init=simple_stmt ';')? tag=expression? ]  b=expr_switch_body {switch_stmt(init,tag,b)}
+| 'switch' [ (init=simple_stmt ';')? tag=expression? ] '{' s=expr_case_clause* '}' {switch_stmt(init,tag,s)}
 */
 func (ps *Parser) exprSwitchStmt() Node {
-	/* 'switch' [ (init=simple_stmt ';')? tag=expression? ] b=expr_switch_body {switch_stmt(init,tag,b)}
+	/* 'switch' [ (init=simple_stmt ';')? tag=expression? ] '{' s=expr_case_clause* '}' {switch_stmt(init,tag,s)}
 	 */
 	pos := ps._mark()
 	for {
-		var b Node
 		var init Node
+		var s Node
 		var tag Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwSwitch)
@@ -15850,11 +16085,28 @@ func (ps *Parser) exprSwitchStmt() Node {
 		if _break {
 			break
 		}
-		b = ps.exprSwitchBody()
-		if b == nil {
+		var _3 Node
+		_3 = ps._expectK(TokenTypeOpLeftBrace)
+		if _3 == nil {
 			break
 		}
-		return NewSwitchStmtNode(ps._filePath, ps._fileContent, init, tag, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		_4 := make([]Node, 0)
+		var _5 Node
+		for {
+			_5 = ps.exprCaseClause()
+			if _5 == nil {
+				break
+			}
+			_4 = append(_4, _5)
+		}
+		s = NewNodesNode(_4)
+		_ = s
+		var _6 Node
+		_6 = ps._expectK(TokenTypeOpRightBrace)
+		if _6 == nil {
+			break
+		}
+		return NewSwitchStmtNode(ps._filePath, ps._fileContent, init, tag, s, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -15862,11 +16114,11 @@ func (ps *Parser) exprSwitchStmt() Node {
 
 /*
 expr_case_clause:
-| 'case' x=expression_list ':' y=statement_semi_list? {case_clause(x,y)}
-| 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+| 'case' x=expression_list ':' y=statement_semi_list? {expr_case_clause(x,y)}
+| 'default' ':' x=statement_semi_list? {default_clause(x)}
 */
 func (ps *Parser) exprCaseClause() Node {
-	/* 'case' x=expression_list ':' y=statement_semi_list? {case_clause(x,y)}
+	/* 'case' x=expression_list ':' y=statement_semi_list? {expr_case_clause(x,y)}
 	 */
 	pos := ps._mark()
 	for {
@@ -15888,10 +16140,10 @@ func (ps *Parser) exprCaseClause() Node {
 		}
 		y = ps.statementSemiList()
 		_ = y
-		return NewCaseClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewExprCaseClauseNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'default' ':' x=statement_semi_list? {case_clause(_,x)}
+	/* 'default' ':' x=statement_semi_list? {default_clause(x)}
 	 */
 	for {
 		var x Node
@@ -15907,7 +16159,7 @@ func (ps *Parser) exprCaseClause() Node {
 		}
 		x = ps.statementSemiList()
 		_ = x
-		return NewCaseClauseNode(ps._filePath, ps._fileContent, nil, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewDefaultClauseNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil

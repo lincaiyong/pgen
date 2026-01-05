@@ -5,10 +5,15 @@ import (
 	"testing"
 )
 
-func TestHello(t *testing.T) {
-	node, err := ParseBytes("test.go", []byte("package main\n"))
+func TestParser(t *testing.T) {
+	code := `package main
+func main() {
+	print(12)
+}`
+	node, err := ParseBytes("main.go", []byte(code))
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(DumpNodeIndent(node))
+	dump := DumpNodeIndent(node)
+	fmt.Println(dump)
 }

@@ -24,7 +24,7 @@ require (
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(goparser.DumpNode(ret))
+	fmt.Println(goparser.SimpleDumpNode(ret))
 	ret.Visit(func(node goparser.Node) (bool, bool) {
 		fmt.Printf("【%s】", string(node.Code()))
 		return true, false

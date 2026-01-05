@@ -4,21 +4,31 @@ statement:
     | var_decl
     | const_decl
     | type_decl
-    | labeled_stmt
-    | simple_stmt
     | if_stmt
     | type_switch_stmt
     | expr_switch_stmt
-    | 'select' b=select_body {select_stmt(b)}
+    | select_stmt
     | for_stmt
-    | 'go' x=expression {go_stmt(x)}
-    | 'return' x=expression_list? {return_stmt(x)}
-    | x='break' y=IDENT? {branch_stmt(x,y)}
-    | x='continue' y=IDENT? {branch_stmt(x,y)}
-    | x='goto' y=IDENT {branch_stmt(x,y)}
-    | x='fallthrough' {branch_stmt(x,_)}
-    | 'defer' x=expression {defer_stmt(x)}
+    | simple_stmt
+    | labeled_stmt
+    | go_stmt
+    | return_stmt
+    | break_stmt
+    | continue_stmt
+    | goto_stmt
+    | fallthrough_stmt
+    | defer_stmt
     | block
+
+block: '{' x=statement_semi_list? '}' {block_stmt(x)}
+
+defer_stmt: 'defer' x=expression {defer_stmt(x)}
+fallthrough_stmt: x='fallthrough' {branch_stmt(x,_)}
+goto_stmt: x='goto' y=IDENT {branch_stmt(x,y)}
+continue_stmt: x='continue' y=IDENT? {branch_stmt(x,y)}
+break_stmt: x='break' y=IDENT? {branch_stmt(x,y)}
+return_stmt: 'return' x=expression_list? {return_stmt(x)}
+go_stmt: 'go' x=expression {go_stmt(x)}
 
 labeled_stmt:
     | x=IDENT ':' b=empty_block {labeled_stmt(x,b)}

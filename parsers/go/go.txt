@@ -20,7 +20,6 @@ import_path: s=STRING {import_path(s)}
 
 top_level_decl_semi: t=top_level_decl ';'? {t}
 top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
-block: '{' x=statement_semi_list? '}' {block_stmt(x)}
 
 #include(grammar.function.txt)
 #include(grammar.const.var.txt)

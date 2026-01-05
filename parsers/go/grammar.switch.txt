@@ -1,3 +1,4 @@
+select_stmt: 'select' b=select_body {select_stmt(b)}
 
 select_body: '{' cases=common_clause* '}' {block_stmt(cases)}
 

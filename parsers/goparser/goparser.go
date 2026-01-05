@@ -11807,34 +11807,6 @@ func (ps *Parser) topLevelDecl() Node {
 }
 
 /*
-block:
-| '{' x=statement_semi_list? '}' {block_stmt(x)}
-*/
-func (ps *Parser) block() Node {
-	/* '{' x=statement_semi_list? '}' {block_stmt(x)}
-	 */
-	pos := ps._mark()
-	for {
-		var x Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
-		if _1 == nil {
-			break
-		}
-		x = ps.statementSemiList()
-		_ = x
-		var _2 Node
-		_2 = ps._expectK(TokenTypeOpRightBrace)
-		if _2 == nil {
-			break
-		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
 function_decl:
 | 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 */
@@ -13133,20 +13105,20 @@ statement:
 | var_decl
 | const_decl
 | type_decl
-| labeled_stmt
-| simple_stmt
 | if_stmt
 | type_switch_stmt
 | expr_switch_stmt
-| 'select' b=select_body {select_stmt(b)}
+| select_stmt
 | for_stmt
-| 'go' x=expression {go_stmt(x)}
-| 'return' x=expression_list? {return_stmt(x)}
-| x='break' y=IDENT? {branch_stmt(x,y)}
-| x='continue' y=IDENT? {branch_stmt(x,y)}
-| x='goto' y=IDENT {branch_stmt(x,y)}
-| x='fallthrough' {branch_stmt(x,_)}
-| 'defer' x=expression {defer_stmt(x)}
+| simple_stmt
+| labeled_stmt
+| go_stmt
+| return_stmt
+| break_stmt
+| continue_stmt
+| goto_stmt
+| fallthrough_stmt
+| defer_stmt
 | block
 */
 func (ps *Parser) statement() Node {
@@ -13175,26 +13147,6 @@ func (ps *Parser) statement() Node {
 	for {
 		var _1 Node
 		_1 = ps.typeDecl()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* labeled_stmt
-	 */
-	for {
-		var _1 Node
-		_1 = ps.labeledStmt()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* simple_stmt
-	 */
-	for {
-		var _1 Node
-		_1 = ps.simpleStmt()
 		if _1 == nil {
 			break
 		}
@@ -13230,23 +13182,16 @@ func (ps *Parser) statement() Node {
 		}
 		return _1
 	}
-	/* 'select' b=select_body {select_stmt(b)}
+	/* select_stmt
 	 */
-	pos := ps._mark()
 	for {
-		var b Node
 		var _1 Node
-		_1 = ps._expectK(TokenTypeKwSelect)
+		_1 = ps.selectStmt()
 		if _1 == nil {
 			break
 		}
-		b = ps.selectBody()
-		if b == nil {
-			break
-		}
-		return NewSelectStmtNode(ps._filePath, ps._fileContent, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return _1
 	}
-	ps._reset(pos)
 	/* for_stmt
 	 */
 	for {
@@ -13257,93 +13202,145 @@ func (ps *Parser) statement() Node {
 		}
 		return _1
 	}
-	/* 'go' x=expression {go_stmt(x)}
+	/* simple_stmt
 	 */
 	for {
-		var x Node
 		var _1 Node
-		_1 = ps._expectK(TokenTypeKwGo)
+		_1 = ps.simpleStmt()
 		if _1 == nil {
 			break
 		}
-		x = ps.expression()
-		if x == nil {
-			break
-		}
-		return NewGoStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return _1
 	}
-	ps._reset(pos)
-	/* 'return' x=expression_list? {return_stmt(x)}
+	/* labeled_stmt
 	 */
 	for {
-		var x Node
 		var _1 Node
-		_1 = ps._expectK(TokenTypeKwReturn)
+		_1 = ps.labeledStmt()
 		if _1 == nil {
 			break
 		}
-		x = ps.expressionList()
+		return _1
+	}
+	/* go_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.goStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* return_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.returnStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* break_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.breakStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* continue_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.continueStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* goto_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.gotoStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* fallthrough_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.fallthroughStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* defer_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.deferStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* block
+	 */
+	for {
+		var _1 Node
+		_1 = ps.block()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	return nil
+}
+
+/*
+block:
+| '{' x=statement_semi_list? '}' {block_stmt(x)}
+*/
+func (ps *Parser) block() Node {
+	/* '{' x=statement_semi_list? '}' {block_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLeftBrace)
+		if _1 == nil {
+			break
+		}
+		x = ps.statementSemiList()
 		_ = x
-		return NewReturnStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x='break' y=IDENT? {branch_stmt(x,y)}
-	 */
-	for {
-		var x Node
-		var y Node
-		x = ps._expectK(TokenTypeKwBreak)
-		if x == nil {
+		var _2 Node
+		_2 = ps._expectK(TokenTypeOpRightBrace)
+		if _2 == nil {
 			break
 		}
-		y = ps._expectK(TokenTypeIdent)
-		_ = y
-		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewBlockStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* x='continue' y=IDENT? {branch_stmt(x,y)}
-	 */
-	for {
-		var x Node
-		var y Node
-		x = ps._expectK(TokenTypeKwContinue)
-		if x == nil {
-			break
-		}
-		y = ps._expectK(TokenTypeIdent)
-		_ = y
-		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x='goto' y=IDENT {branch_stmt(x,y)}
-	 */
-	for {
-		var x Node
-		var y Node
-		x = ps._expectK(TokenTypeKwGoto)
-		if x == nil {
-			break
-		}
-		y = ps._expectK(TokenTypeIdent)
-		if y == nil {
-			break
-		}
-		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x='fallthrough' {branch_stmt(x,_)}
-	 */
-	for {
-		var x Node
-		x = ps._expectK(TokenTypeKwFallthrough)
-		if x == nil {
-			break
-		}
-		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
+	return nil
+}
+
+/*
+defer_stmt:
+| 'defer' x=expression {defer_stmt(x)}
+*/
+func (ps *Parser) deferStmt() Node {
 	/* 'defer' x=expression {defer_stmt(x)}
 	 */
+	pos := ps._mark()
 	for {
 		var x Node
 		var _1 Node
@@ -13358,16 +13355,145 @@ func (ps *Parser) statement() Node {
 		return NewDeferStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* block
+	return nil
+}
+
+/*
+fallthrough_stmt:
+| x='fallthrough' {branch_stmt(x,_)}
+*/
+func (ps *Parser) fallthroughStmt() Node {
+	/* x='fallthrough' {branch_stmt(x,_)}
 	 */
+	pos := ps._mark()
 	for {
+		var x Node
+		x = ps._expectK(TokenTypeKwFallthrough)
+		if x == nil {
+			break
+		}
+		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+goto_stmt:
+| x='goto' y=IDENT {branch_stmt(x,y)}
+*/
+func (ps *Parser) gotoStmt() Node {
+	/* x='goto' y=IDENT {branch_stmt(x,y)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var y Node
+		x = ps._expectK(TokenTypeKwGoto)
+		if x == nil {
+			break
+		}
+		y = ps._expectK(TokenTypeIdent)
+		if y == nil {
+			break
+		}
+		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+continue_stmt:
+| x='continue' y=IDENT? {branch_stmt(x,y)}
+*/
+func (ps *Parser) continueStmt() Node {
+	/* x='continue' y=IDENT? {branch_stmt(x,y)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var y Node
+		x = ps._expectK(TokenTypeKwContinue)
+		if x == nil {
+			break
+		}
+		y = ps._expectK(TokenTypeIdent)
+		_ = y
+		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+break_stmt:
+| x='break' y=IDENT? {branch_stmt(x,y)}
+*/
+func (ps *Parser) breakStmt() Node {
+	/* x='break' y=IDENT? {branch_stmt(x,y)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var y Node
+		x = ps._expectK(TokenTypeKwBreak)
+		if x == nil {
+			break
+		}
+		y = ps._expectK(TokenTypeIdent)
+		_ = y
+		return NewBranchStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+return_stmt:
+| 'return' x=expression_list? {return_stmt(x)}
+*/
+func (ps *Parser) returnStmt() Node {
+	/* 'return' x=expression_list? {return_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
 		var _1 Node
-		_1 = ps.block()
+		_1 = ps._expectK(TokenTypeKwReturn)
 		if _1 == nil {
 			break
 		}
-		return _1
+		x = ps.expressionList()
+		_ = x
+		return NewReturnStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+go_stmt:
+| 'go' x=expression {go_stmt(x)}
+*/
+func (ps *Parser) goStmt() Node {
+	/* 'go' x=expression {go_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwGo)
+		if _1 == nil {
+			break
+		}
+		x = ps.expression()
+		if x == nil {
+			break
+		}
+		return NewGoStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
 	return nil
 }
 
@@ -13938,6 +14064,31 @@ func (ps *Parser) forStmt() Node {
 			break
 		}
 		return NewRangeStmtNode(ps._filePath, ps._fileContent, k, nil, x, b, tok, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+select_stmt:
+| 'select' b=select_body {select_stmt(b)}
+*/
+func (ps *Parser) selectStmt() Node {
+	/* 'select' b=select_body {select_stmt(b)}
+	 */
+	pos := ps._mark()
+	for {
+		var b Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwSelect)
+		if _1 == nil {
+			break
+		}
+		b = ps.selectBody()
+		if b == nil {
+			break
+		}
+		return NewSelectStmtNode(ps._filePath, ps._fileContent, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil

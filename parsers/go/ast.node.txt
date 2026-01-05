@@ -1,0 +1,86 @@
+file                <package imports declarations>
+assign_stmt         <lhs op rhs>
+block_stmt          <list>
+branch_stmt         <tok label>
+defer_stmt          <call>
+go_stmt             <call>
+send_stmt           <chan value>
+expr_stmt           <x>
+inc_dec_stmt        <x tok>
+if_stmt             <init cond body else>
+for_stmt            <init cond post body>
+range_stmt          <key value x body tok>
+select_stmt         <body>
+switch_stmt         <init tag body>
+type_switch_stmt    <init assign body>
+return_stmt         <results>
+binary_expr         <x y op>
+call_expr           <fun type_args args>
+index_expr          <x index>
+key_value_expr      <key value>
+paren_expr          <x>
+selector_expr       <x sel>
+star_expr           <x>
+type_assert_expr    <x type>
+slice_expr          <x low high max>
+unary_expr          <op x>
+array_type          <len elt>
+chan_type           <dir value>
+function_type           <params results>
+interface_type      <methods>
+map_type            <key value>
+struct_type         <x>
+basic_lit           <value>
+composite_lit       <type elts>
+function_lit            <type body>
+case_clause         <list body>
+common_clause       <common body>
+field_list          <list>
+field               <names type tag>
+import_decl         <x>
+import_spec         <name source>
+const_spec          <names type values>
+var_spec            <names type values>
+type_eq_spec        <name type_params type>
+type_spec           <name type_params type>
+const_decl          <specs>
+var_decl            <specs>
+type_decl           <specs>
+
+ellipsis            <elt>
+labeled_stmt        <label stmt>
+generic_type_instantiation        <base args>
+ident               <x>
+make_expr           <x>
+new_expr            <x>
+
+package_ident   <ident>
+import_dot      <dot>
+import_ident    <ident>
+import_path     <path>
+
+const_ident                 <ident>
+var_ident                   <ident>
+type_ident                  <ident>
+function_ident                  <ident>
+method_ident                <ident>
+
+generic_parameter                   <name type>
+generic_parameter_ident             <ident>
+generic_union_constraint            <list>
+generic_underlying_type_constraint  <type>
+generic_type_constraint             <type>
+
+ellipsis_parameter                  <name type>
+parameter                           <name type>
+parameter_ident                     <ident>
+function_result                              <name type>
+function_result_ident                        <ident>
+
+function_decl                       <name generic_parameters parameters results body>
+method_decl                         <receiver name generic_parameters parameters results body>
+
+receiver_ident                      <ident>
+receiver_type_ident                 <ident>
+receiver_generic_type_ident         <ident>
+receiver                            <name star type>

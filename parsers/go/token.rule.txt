@@ -1,0 +1,14 @@
+comment:
+    | '//' _any_but_eol* | '/*' (!'*/' _any_but_eof)* '*/'
+_ident_ch:
+    | !_whitespace_ch [a-zA-Z_\u0080-\uFFFF]
+ident:
+    | _ident_ch (_ident_ch | [0-9])*
+string:
+    | '`' (!'`' _any_but_eof)* '`'
+    | '"' ('\\' _any_but_eof | !'"' _any_but_eol)* '"'
+number:
+    | '0' [oObBxX] [_0-9a-fA-F.]+ ([pP] [+-]? [_0-9]+)? 'i'?
+    | '.' [0-9] ('_'? [0-9])* ([eE] [+-]? [0-9] ('_'? [0-9])*)? 'i'?
+    | [0-9] ('_'? [0-9])* '.'? ([0-9] ('_'? [0-9])*)? ([eE] [+-]? [0-9] ('_'? [0-9])*)? 'i'?
+    | '\'' ('\\' _any_but_eof | !'\'' _any_but_eol)+ '\''

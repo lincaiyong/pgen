@@ -1,0 +1,46 @@
+expression(memo):
+    | conditional_or_expression
+conditional_or_expression:
+    | x=conditional_or_expression z='||' y=conditional_and_expression {binary_expr(x,y,z)}
+    | conditional_and_expression
+conditional_and_expression:
+    | x=conditional_and_expression z='&&' y=rel_op_expression {binary_expr(x,y,z)}
+    | rel_op_expression
+rel_op_expression:
+    | x=rel_op_expression z=rel_op y=add_op_expression {binary_expr(x,y,z)}
+    | add_op_expression
+add_op_expression:
+    | x=add_op_expression z=add_op y=mul_op_expression {binary_expr(x,y,z)}
+    | mul_op_expression
+mul_op_expression:
+    | x=mul_op_expression z=mul_op y=unary_expr {binary_expr(x,y,z)}
+    | unary_expr
+unary_expr:
+    | '*' x=unary_expr {star_expr(x)}
+    | x=unary_op y=unary_expr {unary_expr(x,y)}
+    | primary_expr
+primary_expr:
+    | make_ident '(' t=type (',' expression_list)? ','? ')' {make_expr(t)}
+    | new_ident '(' t=type ')' {new_expr(t)}
+    | x=primary_expr g=generic_args? '(' ')' {call_expr(x, g, _)}
+    | x=primary_expr g=generic_args? '(' y=expression_list '...'? ','? ')' {call_expr(x,g,y)}
+    | x=primary_expr '.' '(' y=type ')' {type_assert_expr(x,y)}
+    | e=primary_expr '[' l=expression? ':' h=expression ':' m=expression ']' {slice_expr(e,l,h,m)}
+    | e=primary_expr '[' l=expression? ':' h=expression? ']' {slice_expr(e,l,h,_)}
+    | x=primary_expr '[' y=expression ']' {index_expr(x,y)}
+    | x=primary_expr '.' y=IDENT {selector_expr(x, y)}
+    | x=type g=generic_args? '(' y=expression ','? ')' {call_expr(x,g,[y])}
+    | '(' x=expression ')' {paren_expr(x)}
+    | x=NUMBER {basic_lit(x)}
+    | x=STRING {basic_lit(x)}
+    | x=literal_type '{' y=','.keyed_element* ','? '}' {composite_lit(x, y)}
+    | _hack_composite_lit_node
+    | 'func' x=signature y=block {function_lit(x,y)}
+    | x=type '.' y=IDENT {selector_expr(x,y)}
+    | i=IDENT {ident(i)}
+make_ident: x='make' {ident(x)}
+new_ident: x='new' {ident(x)}
+rel_op: '==' | '!=' | '<' | '<=' | '>' | '>='
+add_op: '+' | '-' | '|' | '^'
+mul_op: '*' | '/' | '%' | '<<' | '>>' | '&' | '&^'
+unary_op: '+' | '-' | '!' | '^' | '*' | '&' | '<-'

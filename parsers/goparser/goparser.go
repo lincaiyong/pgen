@@ -192,13 +192,13 @@ const NodeTypeSliceExpr = "slice_expr"
 const NodeTypeUnaryExpr = "unary_expr"
 const NodeTypeArrayType = "array_type"
 const NodeTypeChanType = "chan_type"
-const NodeTypeFuncType = "func_type"
+const NodeTypeFunctionType = "function_type"
 const NodeTypeInterfaceType = "interface_type"
 const NodeTypeMapType = "map_type"
 const NodeTypeStructType = "struct_type"
 const NodeTypeBasicLit = "basic_lit"
 const NodeTypeCompositeLit = "composite_lit"
-const NodeTypeFuncLit = "func_lit"
+const NodeTypeFunctionLit = "function_lit"
 const NodeTypeCaseClause = "case_clause"
 const NodeTypeCommonClause = "common_clause"
 const NodeTypeFieldList = "field_list"
@@ -225,7 +225,7 @@ const NodeTypeImportPath = "import_path"
 const NodeTypeConstIdent = "const_ident"
 const NodeTypeVarIdent = "var_ident"
 const NodeTypeTypeIdent = "type_ident"
-const NodeTypeFuncIdent = "func_ident"
+const NodeTypeFunctionIdent = "function_ident"
 const NodeTypeMethodIdent = "method_ident"
 const NodeTypeGenericParameter = "generic_parameter"
 const NodeTypeGenericParameterIdent = "generic_parameter_ident"
@@ -235,8 +235,8 @@ const NodeTypeGenericTypeConstraint = "generic_type_constraint"
 const NodeTypeEllipsisParameter = "ellipsis_parameter"
 const NodeTypeParameter = "parameter"
 const NodeTypeParameterIdent = "parameter_ident"
-const NodeTypeResult = "result"
-const NodeTypeResultIdent = "result_ident"
+const NodeTypeFunctionResult = "function_result"
+const NodeTypeFunctionResultIdent = "function_result_ident"
 const NodeTypeFunctionDecl = "function_decl"
 const NodeTypeMethodDecl = "method_decl"
 const NodeTypeReceiverIdent = "receiver_ident"
@@ -720,21 +720,21 @@ func (n *TokenNode) Dump(func(Node, map[string]string) string) map[string]string
 	}
 }
 
-func NewFileNode(filePath string, fileContent []rune, package_ Node, import_ Node, decls Node, start, end Position) Node {
+func NewFileNode(filePath string, fileContent []rune, package_ Node, imports Node, declarations Node, start, end Position) Node {
 	if package_ == nil {
 		package_ = DummyNode
 	}
-	if import_ == nil {
-		import_ = DummyNode
+	if imports == nil {
+		imports = DummyNode
 	}
-	if decls == nil {
-		decls = DummyNode
+	if declarations == nil {
+		declarations = DummyNode
 	}
 	_1 := &FileNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFile, start, end),
-		package_: package_,
-		import_:  import_,
-		decls:    decls,
+		BaseNode:     NewBaseNode(filePath, fileContent, NodeTypeFile, start, end),
+		package_:     package_,
+		imports:      imports,
+		declarations: declarations,
 	}
 	creationHook(_1)
 	return _1
@@ -742,9 +742,9 @@ func NewFileNode(filePath string, fileContent []rune, package_ Node, import_ Nod
 
 type FileNode struct {
 	*BaseNode
-	package_ Node
-	import_  Node
-	decls    Node
+	package_     Node
+	imports      Node
+	declarations Node
 }
 
 func (n *FileNode) Package() Node {
@@ -755,20 +755,20 @@ func (n *FileNode) SetPackage(v Node) {
 	n.package_ = v
 }
 
-func (n *FileNode) Import() Node {
-	return n.import_
+func (n *FileNode) Imports() Node {
+	return n.imports
 }
 
-func (n *FileNode) SetImport(v Node) {
-	n.import_ = v
+func (n *FileNode) SetImports(v Node) {
+	n.imports = v
 }
 
-func (n *FileNode) Decls() Node {
-	return n.decls
+func (n *FileNode) Declarations() Node {
+	return n.declarations
 }
 
-func (n *FileNode) SetDecls(v Node) {
-	n.decls = v
+func (n *FileNode) SetDeclarations(v Node) {
+	n.declarations = v
 }
 
 func (n *FileNode) BuildLink() {
@@ -781,22 +781,22 @@ func (n *FileNode) BuildLink() {
 			n.Parent().(*FileNode).SetPackage(n)
 		})
 	}
-	if !n.Import().IsDummy() {
-		import_ := n.Import()
-		import_.BuildLink()
-		import_.SetParent(n)
-		import_.SetSelfField("import_")
-		import_.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FileNode).SetImport(n)
+	if !n.Imports().IsDummy() {
+		imports := n.Imports()
+		imports.BuildLink()
+		imports.SetParent(n)
+		imports.SetSelfField("imports")
+		imports.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FileNode).SetImports(n)
 		})
 	}
-	if !n.Decls().IsDummy() {
-		decls := n.Decls()
-		decls.BuildLink()
-		decls.SetParent(n)
-		decls.SetSelfField("decls")
-		decls.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FileNode).SetDecls(n)
+	if !n.Declarations().IsDummy() {
+		declarations := n.Declarations()
+		declarations.BuildLink()
+		declarations.SetParent(n)
+		declarations.SetSelfField("declarations")
+		declarations.SetReplaceSelf(func(n Node) {
+			n.Parent().(*FileNode).SetDeclarations(n)
 		})
 	}
 }
@@ -804,8 +804,8 @@ func (n *FileNode) BuildLink() {
 func (n *FileNode) Fields() []string {
 	return []string{
 		"package_",
-		"import_",
-		"decls",
+		"imports",
+		"declarations",
 	}
 }
 
@@ -816,11 +816,11 @@ func (n *FileNode) Child(field string) Node {
 	if field == "package_" {
 		return n.Package()
 	}
-	if field == "import_" {
-		return n.Import()
+	if field == "imports" {
+		return n.Imports()
 	}
-	if field == "decls" {
-		return n.Decls()
+	if field == "declarations" {
+		return n.Declarations()
 	}
 	return nil
 }
@@ -830,20 +830,20 @@ func (n *FileNode) SetChild(nodes []Node) {
 		return
 	}
 	n.SetPackage(nodes[0])
-	n.SetImport(nodes[1])
-	n.SetDecls(nodes[2])
+	n.SetImports(nodes[1])
+	n.SetDeclarations(nodes[2])
 }
 
 func (n *FileNode) Fork() Node {
 	_ret := &FileNode{
-		BaseNode: n.BaseNode.fork(),
-		package_: n.package_.Fork(),
-		import_:  n.import_.Fork(),
-		decls:    n.decls.Fork(),
+		BaseNode:     n.BaseNode.fork(),
+		package_:     n.package_.Fork(),
+		imports:      n.imports.Fork(),
+		declarations: n.declarations.Fork(),
 	}
 	_ret.package_.SetParent(_ret)
-	_ret.import_.SetParent(_ret)
-	_ret.decls.SetParent(_ret)
+	_ret.imports.SetParent(_ret)
+	_ret.declarations.SetParent(_ret)
 	return _ret
 }
 
@@ -858,10 +858,10 @@ func (n *FileNode) Visit(beforeChildren func(node Node) (visitChildren, exit boo
 	if n.package_.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.import_.Visit(beforeChildren, afterChildren) {
+	if n.imports.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.decls.Visit(beforeChildren, afterChildren) {
+	if n.declarations.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if afterChildren(n) {
@@ -874,8 +874,8 @@ func (n *FileNode) Dump(hook func(Node, map[string]string) string) map[string]st
 	ret := make(map[string]string)
 	ret["kind"] = "\"file\""
 	ret["package"] = DumpNode(n.Package(), hook)
-	ret["import"] = DumpNode(n.Import(), hook)
-	ret["decls"] = DumpNode(n.Decls(), hook)
+	ret["imports"] = DumpNode(n.Imports(), hook)
+	ret["declarations"] = DumpNode(n.Declarations(), hook)
 	return ret
 }
 
@@ -4479,15 +4479,15 @@ func (n *ChanTypeNode) Dump(hook func(Node, map[string]string) string) map[strin
 	return ret
 }
 
-func NewFuncTypeNode(filePath string, fileContent []rune, params Node, results Node, start, end Position) Node {
+func NewFunctionTypeNode(filePath string, fileContent []rune, params Node, results Node, start, end Position) Node {
 	if params == nil {
 		params = DummyNode
 	}
 	if results == nil {
 		results = DummyNode
 	}
-	_1 := &FuncTypeNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFuncType, start, end),
+	_1 := &FunctionTypeNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFunctionType, start, end),
 		params:   params,
 		results:  results,
 	}
@@ -4495,36 +4495,36 @@ func NewFuncTypeNode(filePath string, fileContent []rune, params Node, results N
 	return _1
 }
 
-type FuncTypeNode struct {
+type FunctionTypeNode struct {
 	*BaseNode
 	params  Node
 	results Node
 }
 
-func (n *FuncTypeNode) Params() Node {
+func (n *FunctionTypeNode) Params() Node {
 	return n.params
 }
 
-func (n *FuncTypeNode) SetParams(v Node) {
+func (n *FunctionTypeNode) SetParams(v Node) {
 	n.params = v
 }
 
-func (n *FuncTypeNode) Results() Node {
+func (n *FunctionTypeNode) Results() Node {
 	return n.results
 }
 
-func (n *FuncTypeNode) SetResults(v Node) {
+func (n *FunctionTypeNode) SetResults(v Node) {
 	n.results = v
 }
 
-func (n *FuncTypeNode) BuildLink() {
+func (n *FunctionTypeNode) BuildLink() {
 	if !n.Params().IsDummy() {
 		params := n.Params()
 		params.BuildLink()
 		params.SetParent(n)
 		params.SetSelfField("params")
 		params.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncTypeNode).SetParams(n)
+			n.Parent().(*FunctionTypeNode).SetParams(n)
 		})
 	}
 	if !n.Results().IsDummy() {
@@ -4533,19 +4533,19 @@ func (n *FuncTypeNode) BuildLink() {
 		results.SetParent(n)
 		results.SetSelfField("results")
 		results.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncTypeNode).SetResults(n)
+			n.Parent().(*FunctionTypeNode).SetResults(n)
 		})
 	}
 }
 
-func (n *FuncTypeNode) Fields() []string {
+func (n *FunctionTypeNode) Fields() []string {
 	return []string{
 		"params",
 		"results",
 	}
 }
 
-func (n *FuncTypeNode) Child(field string) Node {
+func (n *FunctionTypeNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -4558,7 +4558,7 @@ func (n *FuncTypeNode) Child(field string) Node {
 	return nil
 }
 
-func (n *FuncTypeNode) SetChild(nodes []Node) {
+func (n *FunctionTypeNode) SetChild(nodes []Node) {
 	if len(nodes) != 2 {
 		return
 	}
@@ -4566,8 +4566,8 @@ func (n *FuncTypeNode) SetChild(nodes []Node) {
 	n.SetResults(nodes[1])
 }
 
-func (n *FuncTypeNode) Fork() Node {
-	_ret := &FuncTypeNode{
+func (n *FunctionTypeNode) Fork() Node {
+	_ret := &FunctionTypeNode{
 		BaseNode: n.BaseNode.fork(),
 		params:   n.params.Fork(),
 		results:  n.results.Fork(),
@@ -4577,7 +4577,7 @@ func (n *FuncTypeNode) Fork() Node {
 	return _ret
 }
 
-func (n *FuncTypeNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *FunctionTypeNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -4597,9 +4597,9 @@ func (n *FuncTypeNode) Visit(beforeChildren func(node Node) (visitChildren, exit
 	return false
 }
 
-func (n *FuncTypeNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *FunctionTypeNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"func_type\""
+	ret["kind"] = "\"function_type\""
 	ret["params"] = DumpNode(n.Params(), hook)
 	ret["results"] = DumpNode(n.Results(), hook)
 	return ret
@@ -5136,15 +5136,15 @@ func (n *CompositeLitNode) Dump(hook func(Node, map[string]string) string) map[s
 	return ret
 }
 
-func NewFuncLitNode(filePath string, fileContent []rune, type_ Node, body Node, start, end Position) Node {
+func NewFunctionLitNode(filePath string, fileContent []rune, type_ Node, body Node, start, end Position) Node {
 	if type_ == nil {
 		type_ = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
 	}
-	_1 := &FuncLitNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFuncLit, start, end),
+	_1 := &FunctionLitNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFunctionLit, start, end),
 		type_:    type_,
 		body:     body,
 	}
@@ -5152,36 +5152,36 @@ func NewFuncLitNode(filePath string, fileContent []rune, type_ Node, body Node, 
 	return _1
 }
 
-type FuncLitNode struct {
+type FunctionLitNode struct {
 	*BaseNode
 	type_ Node
 	body  Node
 }
 
-func (n *FuncLitNode) Type() Node {
+func (n *FunctionLitNode) Type() Node {
 	return n.type_
 }
 
-func (n *FuncLitNode) SetType(v Node) {
+func (n *FunctionLitNode) SetType(v Node) {
 	n.type_ = v
 }
 
-func (n *FuncLitNode) Body() Node {
+func (n *FunctionLitNode) Body() Node {
 	return n.body
 }
 
-func (n *FuncLitNode) SetBody(v Node) {
+func (n *FunctionLitNode) SetBody(v Node) {
 	n.body = v
 }
 
-func (n *FuncLitNode) BuildLink() {
+func (n *FunctionLitNode) BuildLink() {
 	if !n.Type().IsDummy() {
 		type_ := n.Type()
 		type_.BuildLink()
 		type_.SetParent(n)
 		type_.SetSelfField("type_")
 		type_.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncLitNode).SetType(n)
+			n.Parent().(*FunctionLitNode).SetType(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -5190,19 +5190,19 @@ func (n *FuncLitNode) BuildLink() {
 		body.SetParent(n)
 		body.SetSelfField("body")
 		body.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncLitNode).SetBody(n)
+			n.Parent().(*FunctionLitNode).SetBody(n)
 		})
 	}
 }
 
-func (n *FuncLitNode) Fields() []string {
+func (n *FunctionLitNode) Fields() []string {
 	return []string{
 		"type_",
 		"body",
 	}
 }
 
-func (n *FuncLitNode) Child(field string) Node {
+func (n *FunctionLitNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -5215,7 +5215,7 @@ func (n *FuncLitNode) Child(field string) Node {
 	return nil
 }
 
-func (n *FuncLitNode) SetChild(nodes []Node) {
+func (n *FunctionLitNode) SetChild(nodes []Node) {
 	if len(nodes) != 2 {
 		return
 	}
@@ -5223,8 +5223,8 @@ func (n *FuncLitNode) SetChild(nodes []Node) {
 	n.SetBody(nodes[1])
 }
 
-func (n *FuncLitNode) Fork() Node {
-	_ret := &FuncLitNode{
+func (n *FunctionLitNode) Fork() Node {
+	_ret := &FunctionLitNode{
 		BaseNode: n.BaseNode.fork(),
 		type_:    n.type_.Fork(),
 		body:     n.body.Fork(),
@@ -5234,7 +5234,7 @@ func (n *FuncLitNode) Fork() Node {
 	return _ret
 }
 
-func (n *FuncLitNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *FunctionLitNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -5254,9 +5254,9 @@ func (n *FuncLitNode) Visit(beforeChildren func(node Node) (visitChildren, exit 
 	return false
 }
 
-func (n *FuncLitNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *FunctionLitNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"func_lit\""
+	ret["kind"] = "\"function_lit\""
 	ret["type"] = DumpNode(n.Type(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
@@ -8175,50 +8175,50 @@ func (n *TypeIdentNode) Dump(hook func(Node, map[string]string) string) map[stri
 	return ret
 }
 
-func NewFuncIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
+func NewFunctionIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
 	if ident == nil {
 		ident = DummyNode
 	}
-	_1 := &FuncIdentNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFuncIdent, start, end),
+	_1 := &FunctionIdentNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFunctionIdent, start, end),
 		ident:    ident,
 	}
 	creationHook(_1)
 	return _1
 }
 
-type FuncIdentNode struct {
+type FunctionIdentNode struct {
 	*BaseNode
 	ident Node
 }
 
-func (n *FuncIdentNode) Ident() Node {
+func (n *FunctionIdentNode) Ident() Node {
 	return n.ident
 }
 
-func (n *FuncIdentNode) SetIdent(v Node) {
+func (n *FunctionIdentNode) SetIdent(v Node) {
 	n.ident = v
 }
 
-func (n *FuncIdentNode) BuildLink() {
+func (n *FunctionIdentNode) BuildLink() {
 	if !n.Ident().IsDummy() {
 		ident := n.Ident()
 		ident.BuildLink()
 		ident.SetParent(n)
 		ident.SetSelfField("ident")
 		ident.SetReplaceSelf(func(n Node) {
-			n.Parent().(*FuncIdentNode).SetIdent(n)
+			n.Parent().(*FunctionIdentNode).SetIdent(n)
 		})
 	}
 }
 
-func (n *FuncIdentNode) Fields() []string {
+func (n *FunctionIdentNode) Fields() []string {
 	return []string{
 		"ident",
 	}
 }
 
-func (n *FuncIdentNode) Child(field string) Node {
+func (n *FunctionIdentNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -8228,15 +8228,15 @@ func (n *FuncIdentNode) Child(field string) Node {
 	return nil
 }
 
-func (n *FuncIdentNode) SetChild(nodes []Node) {
+func (n *FunctionIdentNode) SetChild(nodes []Node) {
 	if len(nodes) != 1 {
 		return
 	}
 	n.SetIdent(nodes[0])
 }
 
-func (n *FuncIdentNode) Fork() Node {
-	_ret := &FuncIdentNode{
+func (n *FunctionIdentNode) Fork() Node {
+	_ret := &FunctionIdentNode{
 		BaseNode: n.BaseNode.fork(),
 		ident:    n.ident.Fork(),
 	}
@@ -8244,7 +8244,7 @@ func (n *FuncIdentNode) Fork() Node {
 	return _ret
 }
 
-func (n *FuncIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *FunctionIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -8261,9 +8261,9 @@ func (n *FuncIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exi
 	return false
 }
 
-func (n *FuncIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *FunctionIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"func_ident\""
+	ret["kind"] = "\"function_ident\""
 	ret["ident"] = DumpNode(n.Ident(), hook)
 	return ret
 }
@@ -9204,15 +9204,15 @@ func (n *ParameterIdentNode) Dump(hook func(Node, map[string]string) string) map
 	return ret
 }
 
-func NewResultNode(filePath string, fileContent []rune, name Node, type_ Node, start, end Position) Node {
+func NewFunctionResultNode(filePath string, fileContent []rune, name Node, type_ Node, start, end Position) Node {
 	if name == nil {
 		name = DummyNode
 	}
 	if type_ == nil {
 		type_ = DummyNode
 	}
-	_1 := &ResultNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeResult, start, end),
+	_1 := &FunctionResultNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFunctionResult, start, end),
 		name:     name,
 		type_:    type_,
 	}
@@ -9220,36 +9220,36 @@ func NewResultNode(filePath string, fileContent []rune, name Node, type_ Node, s
 	return _1
 }
 
-type ResultNode struct {
+type FunctionResultNode struct {
 	*BaseNode
 	name  Node
 	type_ Node
 }
 
-func (n *ResultNode) Name() Node {
+func (n *FunctionResultNode) Name() Node {
 	return n.name
 }
 
-func (n *ResultNode) SetName(v Node) {
+func (n *FunctionResultNode) SetName(v Node) {
 	n.name = v
 }
 
-func (n *ResultNode) Type() Node {
+func (n *FunctionResultNode) Type() Node {
 	return n.type_
 }
 
-func (n *ResultNode) SetType(v Node) {
+func (n *FunctionResultNode) SetType(v Node) {
 	n.type_ = v
 }
 
-func (n *ResultNode) BuildLink() {
+func (n *FunctionResultNode) BuildLink() {
 	if !n.Name().IsDummy() {
 		name := n.Name()
 		name.BuildLink()
 		name.SetParent(n)
 		name.SetSelfField("name")
 		name.SetReplaceSelf(func(n Node) {
-			n.Parent().(*ResultNode).SetName(n)
+			n.Parent().(*FunctionResultNode).SetName(n)
 		})
 	}
 	if !n.Type().IsDummy() {
@@ -9258,19 +9258,19 @@ func (n *ResultNode) BuildLink() {
 		type_.SetParent(n)
 		type_.SetSelfField("type_")
 		type_.SetReplaceSelf(func(n Node) {
-			n.Parent().(*ResultNode).SetType(n)
+			n.Parent().(*FunctionResultNode).SetType(n)
 		})
 	}
 }
 
-func (n *ResultNode) Fields() []string {
+func (n *FunctionResultNode) Fields() []string {
 	return []string{
 		"name",
 		"type_",
 	}
 }
 
-func (n *ResultNode) Child(field string) Node {
+func (n *FunctionResultNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -9283,7 +9283,7 @@ func (n *ResultNode) Child(field string) Node {
 	return nil
 }
 
-func (n *ResultNode) SetChild(nodes []Node) {
+func (n *FunctionResultNode) SetChild(nodes []Node) {
 	if len(nodes) != 2 {
 		return
 	}
@@ -9291,8 +9291,8 @@ func (n *ResultNode) SetChild(nodes []Node) {
 	n.SetType(nodes[1])
 }
 
-func (n *ResultNode) Fork() Node {
-	_ret := &ResultNode{
+func (n *FunctionResultNode) Fork() Node {
+	_ret := &FunctionResultNode{
 		BaseNode: n.BaseNode.fork(),
 		name:     n.name.Fork(),
 		type_:    n.type_.Fork(),
@@ -9302,7 +9302,7 @@ func (n *ResultNode) Fork() Node {
 	return _ret
 }
 
-func (n *ResultNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *FunctionResultNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -9322,58 +9322,58 @@ func (n *ResultNode) Visit(beforeChildren func(node Node) (visitChildren, exit b
 	return false
 }
 
-func (n *ResultNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *FunctionResultNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"result\""
+	ret["kind"] = "\"function_result\""
 	ret["name"] = DumpNode(n.Name(), hook)
 	ret["type"] = DumpNode(n.Type(), hook)
 	return ret
 }
 
-func NewResultIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
+func NewFunctionResultIdentNode(filePath string, fileContent []rune, ident Node, start, end Position) Node {
 	if ident == nil {
 		ident = DummyNode
 	}
-	_1 := &ResultIdentNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeResultIdent, start, end),
+	_1 := &FunctionResultIdentNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeFunctionResultIdent, start, end),
 		ident:    ident,
 	}
 	creationHook(_1)
 	return _1
 }
 
-type ResultIdentNode struct {
+type FunctionResultIdentNode struct {
 	*BaseNode
 	ident Node
 }
 
-func (n *ResultIdentNode) Ident() Node {
+func (n *FunctionResultIdentNode) Ident() Node {
 	return n.ident
 }
 
-func (n *ResultIdentNode) SetIdent(v Node) {
+func (n *FunctionResultIdentNode) SetIdent(v Node) {
 	n.ident = v
 }
 
-func (n *ResultIdentNode) BuildLink() {
+func (n *FunctionResultIdentNode) BuildLink() {
 	if !n.Ident().IsDummy() {
 		ident := n.Ident()
 		ident.BuildLink()
 		ident.SetParent(n)
 		ident.SetSelfField("ident")
 		ident.SetReplaceSelf(func(n Node) {
-			n.Parent().(*ResultIdentNode).SetIdent(n)
+			n.Parent().(*FunctionResultIdentNode).SetIdent(n)
 		})
 	}
 }
 
-func (n *ResultIdentNode) Fields() []string {
+func (n *FunctionResultIdentNode) Fields() []string {
 	return []string{
 		"ident",
 	}
 }
 
-func (n *ResultIdentNode) Child(field string) Node {
+func (n *FunctionResultIdentNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -9383,15 +9383,15 @@ func (n *ResultIdentNode) Child(field string) Node {
 	return nil
 }
 
-func (n *ResultIdentNode) SetChild(nodes []Node) {
+func (n *FunctionResultIdentNode) SetChild(nodes []Node) {
 	if len(nodes) != 1 {
 		return
 	}
 	n.SetIdent(nodes[0])
 }
 
-func (n *ResultIdentNode) Fork() Node {
-	_ret := &ResultIdentNode{
+func (n *FunctionResultIdentNode) Fork() Node {
+	_ret := &FunctionResultIdentNode{
 		BaseNode: n.BaseNode.fork(),
 		ident:    n.ident.Fork(),
 	}
@@ -9399,7 +9399,7 @@ func (n *ResultIdentNode) Fork() Node {
 	return _ret
 }
 
-func (n *ResultIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *FunctionResultIdentNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -9416,9 +9416,9 @@ func (n *ResultIdentNode) Visit(beforeChildren func(node Node) (visitChildren, e
 	return false
 }
 
-func (n *ResultIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *FunctionResultIdentNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"result_ident\""
+	ret["kind"] = "\"function_result_ident\""
 	ret["ident"] = DumpNode(n.Ident(), hook)
 	return ret
 }
@@ -11593,12 +11593,12 @@ func (ps *Parser) packageIdent() Node {
 
 /*
 import_decl:
-| 'import' '(' specs=(t=import_spec end_semi {t})* ')' ';'? {import_decl(specs)}
+| 'import' '(' specs=(t=import_spec pseudo_semi {t})* ')' ';'? {import_decl(specs)}
 | 'import' specs=import_spec ';'? {import_decl([specs])}
-_group_1 <-- (t=import_spec end_semi {t})
+_group_1 <-- (t=import_spec pseudo_semi {t})
 */
 func (ps *Parser) importDecl() Node {
-	/* 'import' '(' specs=(t=import_spec end_semi {t})* ')' ';'? {import_decl(specs)}
+	/* 'import' '(' specs=(t=import_spec pseudo_semi {t})* ')' ';'? {import_decl(specs)}
 	 */
 	pos := ps._mark()
 	for {
@@ -11828,10 +11828,10 @@ func (ps *Parser) topLevelDecl() Node {
 
 /*
 function_decl:
-| 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {function_decl(n, t, p, r, b)}
+| 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 */
 func (ps *Parser) functionDecl() Node {
-	/* 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {function_decl(n, t, p, r, b)}
+	/* 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 	 */
 	pos := ps._mark()
 	for {
@@ -11845,48 +11845,17 @@ func (ps *Parser) functionDecl() Node {
 		if _1 == nil {
 			break
 		}
-		n = ps.funcIdent()
+		n = ps.functionIdent()
 		if n == nil {
 			break
 		}
-		t = ps.genericParameterDecl()
+		t = ps.functionGenericParameters()
 		_ = t
-		var _2 Node
-		_2 = ps._expectK(TokenTypeOpLeftParen)
-		if _2 == nil {
+		p = ps.functionParameters()
+		if p == nil {
 			break
 		}
-		_3 := make([]Node, 0)
-		var _4 Node
-		var _5 Node
-		_4 = ps.parameter()
-		if _4 != nil {
-			_3 = append(_3, _4)
-			for {
-				_p := ps._mark()
-				_5 = ps._expectK(TokenTypeOpComma)
-				if _5 == nil {
-					break
-				}
-				_4 = ps.parameter()
-				if _4 == nil {
-					ps._reset(_p)
-					break
-				}
-				_3 = append(_3, _4)
-			}
-		}
-		p = NewNodesNode(_3)
-		_ = p
-		var _6 Node
-		_6 = ps._expectK(TokenTypeOpComma)
-		_ = _6
-		var _7 Node
-		_7 = ps._expectK(TokenTypeOpRightParen)
-		if _7 == nil {
-			break
-		}
-		r = ps.resultDecl()
+		r = ps.functionResults()
 		_ = r
 		b = ps.block()
 		_ = b
@@ -11897,11 +11866,11 @@ func (ps *Parser) functionDecl() Node {
 }
 
 /*
-func_ident:
-| n=IDENT {func_ident(n)}
+function_ident:
+| n=IDENT {function_ident(n)}
 */
-func (ps *Parser) funcIdent() Node {
-	/* n=IDENT {func_ident(n)}
+func (ps *Parser) functionIdent() Node {
+	/* n=IDENT {function_ident(n)}
 	 */
 	pos := ps._mark()
 	for {
@@ -11910,7 +11879,58 @@ func (ps *Parser) funcIdent() Node {
 		if n == nil {
 			break
 		}
-		return NewFuncIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+function_parameters:
+| '(' p=','.parameter* ','? ')' {p}
+*/
+func (ps *Parser) functionParameters() Node {
+	/* '(' p=','.parameter* ','? ')' {p}
+	 */
+	pos := ps._mark()
+	for {
+		var p Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLeftParen)
+		if _1 == nil {
+			break
+		}
+		_2 := make([]Node, 0)
+		var _3 Node
+		var _4 Node
+		_3 = ps.parameter()
+		if _3 != nil {
+			_2 = append(_2, _3)
+			for {
+				_p := ps._mark()
+				_4 = ps._expectK(TokenTypeOpComma)
+				if _4 == nil {
+					break
+				}
+				_3 = ps.parameter()
+				if _3 == nil {
+					ps._reset(_p)
+					break
+				}
+				_2 = append(_2, _3)
+			}
+		}
+		p = NewNodesNode(_2)
+		_ = p
+		var _5 Node
+		_5 = ps._expectK(TokenTypeOpComma)
+		_ = _5
+		var _6 Node
+		_6 = ps._expectK(TokenTypeOpRightParen)
+		if _6 == nil {
+			break
+		}
+		return p
 	}
 	ps._reset(pos)
 	return nil
@@ -11982,12 +12002,12 @@ func (ps *Parser) parameterIdent() Node {
 }
 
 /*
-result_decl:
-| '(' s=','.result+ ','? ')' {s}
-| r=type_only_result {[r]}
+function_results:
+| '(' s=','.function_result+ ','? ')' {s}
+| r=type_only_function_result {[r]}
 */
-func (ps *Parser) resultDecl() Node {
-	/* '(' s=','.result+ ','? ')' {s}
+func (ps *Parser) functionResults() Node {
+	/* '(' s=','.function_result+ ','? ')' {s}
 	 */
 	pos := ps._mark()
 	for {
@@ -11999,7 +12019,7 @@ func (ps *Parser) resultDecl() Node {
 		}
 		_2 := make([]Node, 0)
 		var _3, _4 Node
-		_3 = ps.result()
+		_3 = ps.functionResult()
 		if _3 == nil {
 			break
 		}
@@ -12010,7 +12030,7 @@ func (ps *Parser) resultDecl() Node {
 			if _4 == nil {
 				break
 			}
-			_3 = ps.result()
+			_3 = ps.functionResult()
 			if _3 == nil {
 				ps._reset(_p)
 				break
@@ -12030,11 +12050,11 @@ func (ps *Parser) resultDecl() Node {
 		return s
 	}
 	ps._reset(pos)
-	/* r=type_only_result {[r]}
+	/* r=type_only_function_result {[r]}
 	 */
 	for {
 		var r Node
-		r = ps.typeOnlyResult()
+		r = ps.typeOnlyFunctionResult()
 		if r == nil {
 			break
 		}
@@ -12045,31 +12065,31 @@ func (ps *Parser) resultDecl() Node {
 }
 
 /*
-result:
-| n=result_ident t=type? {result(n, t)}
-| type_only_result
+function_result:
+| n=function_result_ident t=type? {function_result(n, t)}
+| type_only_function_result
 */
-func (ps *Parser) result() Node {
-	/* n=result_ident t=type? {result(n, t)}
+func (ps *Parser) functionResult() Node {
+	/* n=function_result_ident t=type? {function_result(n, t)}
 	 */
 	pos := ps._mark()
 	for {
 		var n Node
 		var t Node
-		n = ps.resultIdent()
+		n = ps.functionResultIdent()
 		if n == nil {
 			break
 		}
 		t = ps.type_()
 		_ = t
-		return NewResultNode(ps._filePath, ps._fileContent, n, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionResultNode(ps._filePath, ps._fileContent, n, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* type_only_result
+	/* type_only_function_result
 	 */
 	for {
 		var _1 Node
-		_1 = ps.typeOnlyResult()
+		_1 = ps.typeOnlyFunctionResult()
 		if _1 == nil {
 			break
 		}
@@ -12079,11 +12099,11 @@ func (ps *Parser) result() Node {
 }
 
 /*
-type_only_result:
-| t=type {result(_, t)}
+type_only_function_result:
+| t=type {function_result(_, t)}
 */
-func (ps *Parser) typeOnlyResult() Node {
-	/* t=type {result(_, t)}
+func (ps *Parser) typeOnlyFunctionResult() Node {
+	/* t=type {function_result(_, t)}
 	 */
 	pos := ps._mark()
 	for {
@@ -12092,18 +12112,18 @@ func (ps *Parser) typeOnlyResult() Node {
 		if t == nil {
 			break
 		}
-		return NewResultNode(ps._filePath, ps._fileContent, nil, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionResultNode(ps._filePath, ps._fileContent, nil, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
 }
 
 /*
-result_ident:
-| n=IDENT {result_ident(n)}
+function_result_ident:
+| n=IDENT {function_result_ident(n)}
 */
-func (ps *Parser) resultIdent() Node {
-	/* n=IDENT {result_ident(n)}
+func (ps *Parser) functionResultIdent() Node {
+	/* n=IDENT {function_result_ident(n)}
 	 */
 	pos := ps._mark()
 	for {
@@ -12112,7 +12132,7 @@ func (ps *Parser) resultIdent() Node {
 		if n == nil {
 			break
 		}
-		return NewResultIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionResultIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -12417,10 +12437,10 @@ func (ps *Parser) constDecl() Node {
 
 /*
 const_spec_semi:
-| c=const_spec end_semi {c}
+| c=const_spec pseudo_semi {c}
 */
 func (ps *Parser) constSpecSemi() Node {
-	/* c=const_spec end_semi {c}
+	/* c=const_spec pseudo_semi {c}
 	 */
 	pos := ps._mark()
 	for {
@@ -12430,7 +12450,7 @@ func (ps *Parser) constSpecSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -12588,10 +12608,10 @@ func (ps *Parser) varDecl() Node {
 
 /*
 var_spec_semi:
-| x=var_spec end_semi {x}
+| x=var_spec pseudo_semi {x}
 */
 func (ps *Parser) varSpecSemi() Node {
-	/* x=var_spec end_semi {x}
+	/* x=var_spec pseudo_semi {x}
 	 */
 	pos := ps._mark()
 	for {
@@ -12601,7 +12621,7 @@ func (ps *Parser) varSpecSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -12759,10 +12779,10 @@ func (ps *Parser) typeDecl() Node {
 
 /*
 type_spec_semi:
-| x=type_spec end_semi {x}
+| x=type_spec pseudo_semi {x}
 */
 func (ps *Parser) typeSpecSemi() Node {
-	/* x=type_spec end_semi {x}
+	/* x=type_spec pseudo_semi {x}
 	 */
 	pos := ps._mark()
 	for {
@@ -12772,7 +12792,7 @@ func (ps *Parser) typeSpecSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -12852,6 +12872,24 @@ func (ps *Parser) typeIdent() Node {
 		return NewTypeIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
+	return nil
+}
+
+/*
+function_generic_parameters:
+| generic_parameter_decl
+*/
+func (ps *Parser) functionGenericParameters() Node {
+	/* generic_parameter_decl
+	 */
+	for {
+		var _1 Node
+		_1 = ps.genericParameterDecl()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
 	return nil
 }
 
@@ -13105,10 +13143,10 @@ func (ps *Parser) statementSemiList() Node {
 
 /*
 statement_semi:
-| x=statement end_semi {x}
+| x=statement pseudo_semi {x}
 */
 func (ps *Parser) statementSemi() Node {
-	/* x=statement end_semi {x}
+	/* x=statement pseudo_semi {x}
 	 */
 	pos := ps._mark()
 	for {
@@ -13118,7 +13156,7 @@ func (ps *Parser) statementSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -15137,7 +15175,7 @@ func (ps *Parser) interfaceBody() Node {
 method_spec_and_interface_type_name_semi:
 | method_spec_semi
 | interface_type_name_semi
-| '|'.('~'? t=type {t})+ end_semi {field(_,_,_)}
+| '|'.('~'? t=type {t})+ pseudo_semi {field(_,_,_)}
 _group_5 <-- ('~'? t=type {t})
 */
 func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
@@ -15161,7 +15199,7 @@ func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 		}
 		return _1
 	}
-	/* '|'.('~'? t=type {t})+ end_semi {field(_,_,_)}
+	/* '|'.('~'? t=type {t})+ pseudo_semi {field(_,_,_)}
 	 */
 	pos := ps._mark()
 	for {
@@ -15189,7 +15227,7 @@ func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 		_1 = NewNodesNode(_2)
 		_ = _1
 		var _5 Node
-		_5 = ps.endSemi()
+		_5 = ps.pseudoSemi()
 		if _5 == nil {
 			break
 		}
@@ -15201,10 +15239,10 @@ func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 
 /*
 method_spec_semi:
-| x=method_spec end_semi {x}
+| x=method_spec pseudo_semi {x}
 */
 func (ps *Parser) methodSpecSemi() Node {
-	/* x=method_spec end_semi {x}
+	/* x=method_spec pseudo_semi {x}
 	 */
 	pos := ps._mark()
 	for {
@@ -15214,7 +15252,7 @@ func (ps *Parser) methodSpecSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -15226,10 +15264,10 @@ func (ps *Parser) methodSpecSemi() Node {
 
 /*
 interface_type_name_semi:
-| x=type_name end_semi {field(_,x,_)}
+| x=type_name pseudo_semi {field(_,x,_)}
 */
 func (ps *Parser) interfaceTypeNameSemi() Node {
-	/* x=type_name end_semi {field(_,x,_)}
+	/* x=type_name pseudo_semi {field(_,x,_)}
 	 */
 	pos := ps._mark()
 	for {
@@ -15239,7 +15277,7 @@ func (ps *Parser) interfaceTypeNameSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -15822,7 +15860,7 @@ primary_expr:
 | x=STRING {basic_lit(x)}
 | x=literal_type '{' y=','.keyed_element* ','? '}' {composite_lit(x, y)}
 | _hack_composite_lit_node
-| 'func' x=signature y=block {func_lit(x,y)}
+| 'func' x=signature y=block {function_lit(x,y)}
 | x=type '.' y=IDENT {selector_expr(x,y)}
 | i=IDENT {ident(i)}
 */
@@ -16051,7 +16089,7 @@ func (ps *Parser) primaryExprLeftMost() Node {
 		}
 		return _1
 	}
-	/* 'func' x=signature y=block {func_lit(x,y)}
+	/* 'func' x=signature y=block {function_lit(x,y)}
 	 */
 	for {
 		var x Node
@@ -16069,7 +16107,7 @@ func (ps *Parser) primaryExprLeftMost() Node {
 		if y == nil {
 			break
 		}
-		return NewFuncLitNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewFunctionLitNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	/* x=type '.' y=IDENT {selector_expr(x,y)}
@@ -16992,10 +17030,10 @@ func (ps *Parser) structType() Node {
 
 /*
 field_decl_semi:
-| x=field_decl end_semi {x}
+| x=field_decl pseudo_semi {x}
 */
 func (ps *Parser) fieldDeclSemi() Node {
-	/* x=field_decl end_semi {x}
+	/* x=field_decl pseudo_semi {x}
 	 */
 	pos := ps._mark()
 	for {
@@ -17005,7 +17043,7 @@ func (ps *Parser) fieldDeclSemi() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}
@@ -17116,12 +17154,12 @@ func (ps *Parser) tag() Node {
 }
 
 /*
-end_semi:
+pseudo_semi:
 | ';'
 | &')'
 | &'}'
 */
-func (ps *Parser) endSemi() Node {
+func (ps *Parser) pseudoSemi() Node {
 	/* ';'
 	 */
 	for {
@@ -17165,10 +17203,10 @@ func (ps *Parser) endSemi() Node {
 
 /*
 _group_1:
-| t=import_spec end_semi {t}
+| t=import_spec pseudo_semi {t}
 */
 func (ps *Parser) _group1() Node {
-	/* t=import_spec end_semi {t}
+	/* t=import_spec pseudo_semi {t}
 	 */
 	pos := ps._mark()
 	for {
@@ -17178,7 +17216,7 @@ func (ps *Parser) _group1() Node {
 			break
 		}
 		var _1 Node
-		_1 = ps.endSemi()
+		_1 = ps.pseudoSemi()
 		if _1 == nil {
 			break
 		}

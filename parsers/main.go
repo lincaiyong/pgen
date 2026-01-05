@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/lincaiyong/log"
 	"github.com/lincaiyong/pgen"
 	"os"
 	"time"
@@ -9,21 +9,21 @@ import (
 
 func main() {
 	start := time.Now()
-	b, err := os.ReadFile("go.txt")
+	grammar, err := pgen.PreProcess("go/go.txt")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.ErrorLog("fail to preprocess: %v", err)
+		return
 	}
-	output, err := pgen.Run(string(b))
+	output, err := pgen.Run(grammar)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.ErrorLog("fail to run: %v", err)
+		return
 	}
 	_ = os.Mkdir("goparser", os.ModePerm)
 	err = os.WriteFile("goparser/goparser.go", []byte(output), 0644)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.ErrorLog("fail to write file: %v", err)
+		return
 	}
-	fmt.Printf("finished in %s\n", time.Since(start))
+	log.InfoLog("finished in %s\n", time.Since(start))
 }

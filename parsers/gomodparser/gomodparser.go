@@ -2,7 +2,7 @@ package gomodparser
 
 import (
 	"fmt"
-	"github.com/lincaiyong/codeedge/parser/goparser"
+	"github.com/lincaiyong/pgen/parsers/goparser"
 	"golang.org/x/mod/modfile"
 	"strings"
 )

@@ -5,6 +5,9 @@
 #include(token.op.txt)
 ------------------------------------------------------------------------------------------------------------------------
 #include(ast.node.txt)
+#include(ast.expr.txt)
+#include(ast.stmt.txt)
+#include(ast.type.txt)
 ------------------------------------------------------------------------------------------------------------------------
 file: 'package' n=package_ident ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 
@@ -37,7 +40,7 @@ assignment: l=expression_list op=assign_op r=expression_list {assign_stmt(l, op,
 assign_op: '=' | '+=' | '-=' | '|=' | '^=' | '*=' | '/=' | '%=' | '<<=' | '>>=' | '&=' | '&^='
 
 short_val_decl: l=identifier_list op=':=' r=expression_list {assign_stmt(l, op, r)}
-empty_block: '{' '}' {block_stmt(_)}
+
 
 type:
     | type_name_or_generic_type_instantiation

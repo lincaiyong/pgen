@@ -1,0 +1,6 @@
+array_type          <len elt>
+chan_type           <dir value>
+function_type           <params results>
+interface_type      <methods>
+map_type            <key value>
+struct_type         <x>

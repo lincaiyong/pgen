@@ -1,0 +1,23 @@
+assign_stmt         <lhs op rhs>
+block_stmt          <list>
+branch_stmt         <tok label>
+
+send_stmt           <chan value>
+expr_stmt           <x>
+inc_dec_stmt        <x tok>
+if_stmt             <init cond body else>
+for_stmt            <init cond post body>
+range_stmt          <key value x body tok>
+select_stmt         <body>
+switch_stmt         <init tag body>
+type_switch_stmt    <init assign body>
+
+return_stmt         <results>
+
+fallthrough_stmt    <>
+continue_stmt       <label>
+goto_stmt           <label>
+break_stmt          <label>
+
+defer_stmt          <expression>
+go_stmt             <expression>

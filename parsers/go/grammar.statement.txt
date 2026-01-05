@@ -22,18 +22,23 @@ statement:
 
 block: '{' x=statement_semi_list? '}' {block_stmt(x)}
 
-defer_stmt: 'defer' x=expression {defer_stmt(x)}
-fallthrough_stmt: x='fallthrough' {branch_stmt(x,_)}
-goto_stmt: x='goto' y=IDENT {branch_stmt(x,y)}
-continue_stmt: x='continue' y=IDENT? {branch_stmt(x,y)}
-break_stmt: x='break' y=IDENT? {branch_stmt(x,y)}
-return_stmt: 'return' x=expression_list? {return_stmt(x)}
-go_stmt: 'go' x=expression {go_stmt(x)}
+label_ident: i=IDENT {label_ident(i)}
+
+fallthrough_stmt: x='fallthrough' {fallthrough_stmt(x,_)}
+goto_stmt: 'goto' x=label_ident {goto_stmt(x)}
+continue_stmt: 'continue' x=label_ident? {continue_stmt(x)}
+break_stmt: 'break' x=label_ident? {break_stmt(x)}
 
 labeled_stmt:
-    | x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
-    | x=IDENT ':' y=statement {labeled_stmt(x,y)}
-    | x=IDENT ':' {labeled_stmt(x,_)}
+    | x=label_ident ':' b=empty_block {labeled_stmt(x,b)}
+    | x=label_ident ':' y=statement {labeled_stmt(x,y)}
+    | x=label_ident ':' {labeled_stmt(x,_)}
+empty_block: '{' '}' {block_stmt(_)}
+
+defer_stmt: 'defer' x=expression {defer_stmt(x)}
+go_stmt: 'go' x=expression {go_stmt(x)}
+
+return_stmt: 'return' x=expression_list? {return_stmt(x)}
 
 simple_stmt:
     | assignment

@@ -223,14 +223,18 @@ const NodeTypeTypeAssertExpr = "type_assert_expr"
 const NodeTypeSliceExpr = "slice_expr"
 const NodeTypeUnaryExpr = "unary_expr"
 const NodeTypeAssignStmt = "assign_stmt"
+const NodeTypeAugAssignStmt = "aug_assign_stmt"
+const NodeTypeShortVarDecl = "short_var_decl"
 const NodeTypeBlockStmt = "block_stmt"
 const NodeTypeBranchStmt = "branch_stmt"
 const NodeTypeSendStmt = "send_stmt"
 const NodeTypeExprStmt = "expr_stmt"
-const NodeTypeIncDecStmt = "inc_dec_stmt"
+const NodeTypeIncStmt = "inc_stmt"
+const NodeTypeDecStmt = "dec_stmt"
 const NodeTypeIfStmt = "if_stmt"
 const NodeTypeForStmt = "for_stmt"
-const NodeTypeRangeStmt = "range_stmt"
+const NodeTypeForAssignRangeStmt = "for_assign_range_stmt"
+const NodeTypeForDeclRangeStmt = "for_decl_range_stmt"
 const NodeTypeSelectStmt = "select_stmt"
 const NodeTypeSwitchStmt = "switch_stmt"
 const NodeTypeTypeSwitchStmt = "type_switch_stmt"
@@ -7636,12 +7640,9 @@ func (n *UnaryExprNode) Dump(hook func(Node, map[string]string) string) map[stri
 	return ret
 }
 
-func NewAssignStmtNode(filePath string, fileContent []rune, lhs Node, op Node, rhs Node, start, end Position) Node {
+func NewAssignStmtNode(filePath string, fileContent []rune, lhs Node, rhs Node, start, end Position) Node {
 	if lhs == nil {
 		lhs = DummyNode
-	}
-	if op == nil {
-		op = DummyNode
 	}
 	if rhs == nil {
 		rhs = DummyNode
@@ -7649,7 +7650,6 @@ func NewAssignStmtNode(filePath string, fileContent []rune, lhs Node, op Node, r
 	_1 := &AssignStmtNode{
 		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeAssignStmt, start, end),
 		lhs:      lhs,
-		op:       op,
 		rhs:      rhs,
 	}
 	creationHook(_1)
@@ -7659,7 +7659,6 @@ func NewAssignStmtNode(filePath string, fileContent []rune, lhs Node, op Node, r
 type AssignStmtNode struct {
 	*BaseNode
 	lhs Node
-	op  Node
 	rhs Node
 }
 
@@ -7669,14 +7668,6 @@ func (n *AssignStmtNode) Lhs() Node {
 
 func (n *AssignStmtNode) SetLhs(v Node) {
 	n.lhs = v
-}
-
-func (n *AssignStmtNode) Op() Node {
-	return n.op
-}
-
-func (n *AssignStmtNode) SetOp(v Node) {
-	n.op = v
 }
 
 func (n *AssignStmtNode) Rhs() Node {
@@ -7697,15 +7688,6 @@ func (n *AssignStmtNode) BuildLink() {
 			n.Parent().(*AssignStmtNode).SetLhs(n)
 		})
 	}
-	if !n.Op().IsDummy() {
-		op := n.Op()
-		op.BuildLink()
-		op.SetParent(n)
-		op.SetSelfField("op")
-		op.SetReplaceSelf(func(n Node) {
-			n.Parent().(*AssignStmtNode).SetOp(n)
-		})
-	}
 	if !n.Rhs().IsDummy() {
 		rhs := n.Rhs()
 		rhs.BuildLink()
@@ -7720,12 +7702,160 @@ func (n *AssignStmtNode) BuildLink() {
 func (n *AssignStmtNode) Fields() []string {
 	return []string{
 		"lhs",
-		"op",
 		"rhs",
 	}
 }
 
 func (n *AssignStmtNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "lhs" {
+		return n.Lhs()
+	}
+	if field == "rhs" {
+		return n.Rhs()
+	}
+	return nil
+}
+
+func (n *AssignStmtNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetLhs(nodes[0])
+	n.SetRhs(nodes[1])
+}
+
+func (n *AssignStmtNode) Fork() Node {
+	_ret := &AssignStmtNode{
+		BaseNode: n.BaseNode.fork(),
+		lhs:      n.lhs.Fork(),
+		rhs:      n.rhs.Fork(),
+	}
+	_ret.lhs.SetParent(_ret)
+	_ret.rhs.SetParent(_ret)
+	return _ret
+}
+
+func (n *AssignStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.lhs.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.rhs.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *AssignStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"assign_stmt\""
+	ret["lhs"] = DumpNode(n.Lhs(), hook)
+	ret["rhs"] = DumpNode(n.Rhs(), hook)
+	return ret
+}
+
+func NewAugAssignStmtNode(filePath string, fileContent []rune, lhs Node, op Node, rhs Node, start, end Position) Node {
+	if lhs == nil {
+		lhs = DummyNode
+	}
+	if op == nil {
+		op = DummyNode
+	}
+	if rhs == nil {
+		rhs = DummyNode
+	}
+	_1 := &AugAssignStmtNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeAugAssignStmt, start, end),
+		lhs:      lhs,
+		op:       op,
+		rhs:      rhs,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type AugAssignStmtNode struct {
+	*BaseNode
+	lhs Node
+	op  Node
+	rhs Node
+}
+
+func (n *AugAssignStmtNode) Lhs() Node {
+	return n.lhs
+}
+
+func (n *AugAssignStmtNode) SetLhs(v Node) {
+	n.lhs = v
+}
+
+func (n *AugAssignStmtNode) Op() Node {
+	return n.op
+}
+
+func (n *AugAssignStmtNode) SetOp(v Node) {
+	n.op = v
+}
+
+func (n *AugAssignStmtNode) Rhs() Node {
+	return n.rhs
+}
+
+func (n *AugAssignStmtNode) SetRhs(v Node) {
+	n.rhs = v
+}
+
+func (n *AugAssignStmtNode) BuildLink() {
+	if !n.Lhs().IsDummy() {
+		lhs := n.Lhs()
+		lhs.BuildLink()
+		lhs.SetParent(n)
+		lhs.SetSelfField("lhs")
+		lhs.SetReplaceSelf(func(n Node) {
+			n.Parent().(*AugAssignStmtNode).SetLhs(n)
+		})
+	}
+	if !n.Op().IsDummy() {
+		op := n.Op()
+		op.BuildLink()
+		op.SetParent(n)
+		op.SetSelfField("op")
+		op.SetReplaceSelf(func(n Node) {
+			n.Parent().(*AugAssignStmtNode).SetOp(n)
+		})
+	}
+	if !n.Rhs().IsDummy() {
+		rhs := n.Rhs()
+		rhs.BuildLink()
+		rhs.SetParent(n)
+		rhs.SetSelfField("rhs")
+		rhs.SetReplaceSelf(func(n Node) {
+			n.Parent().(*AugAssignStmtNode).SetRhs(n)
+		})
+	}
+}
+
+func (n *AugAssignStmtNode) Fields() []string {
+	return []string{
+		"lhs",
+		"op",
+		"rhs",
+	}
+}
+
+func (n *AugAssignStmtNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -7741,7 +7871,7 @@ func (n *AssignStmtNode) Child(field string) Node {
 	return nil
 }
 
-func (n *AssignStmtNode) SetChild(nodes []Node) {
+func (n *AugAssignStmtNode) SetChild(nodes []Node) {
 	if len(nodes) != 3 {
 		return
 	}
@@ -7750,8 +7880,8 @@ func (n *AssignStmtNode) SetChild(nodes []Node) {
 	n.SetRhs(nodes[2])
 }
 
-func (n *AssignStmtNode) Fork() Node {
-	_ret := &AssignStmtNode{
+func (n *AugAssignStmtNode) Fork() Node {
+	_ret := &AugAssignStmtNode{
 		BaseNode: n.BaseNode.fork(),
 		lhs:      n.lhs.Fork(),
 		op:       n.op.Fork(),
@@ -7763,7 +7893,7 @@ func (n *AssignStmtNode) Fork() Node {
 	return _ret
 }
 
-func (n *AssignStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *AugAssignStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -7786,11 +7916,137 @@ func (n *AssignStmtNode) Visit(beforeChildren func(node Node) (visitChildren, ex
 	return false
 }
 
-func (n *AssignStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *AugAssignStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"assign_stmt\""
+	ret["kind"] = "\"aug_assign_stmt\""
 	ret["lhs"] = DumpNode(n.Lhs(), hook)
 	ret["op"] = DumpNode(n.Op(), hook)
+	ret["rhs"] = DumpNode(n.Rhs(), hook)
+	return ret
+}
+
+func NewShortVarDeclNode(filePath string, fileContent []rune, lhs Node, rhs Node, start, end Position) Node {
+	if lhs == nil {
+		lhs = DummyNode
+	}
+	if rhs == nil {
+		rhs = DummyNode
+	}
+	_1 := &ShortVarDeclNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeShortVarDecl, start, end),
+		lhs:      lhs,
+		rhs:      rhs,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ShortVarDeclNode struct {
+	*BaseNode
+	lhs Node
+	rhs Node
+}
+
+func (n *ShortVarDeclNode) Lhs() Node {
+	return n.lhs
+}
+
+func (n *ShortVarDeclNode) SetLhs(v Node) {
+	n.lhs = v
+}
+
+func (n *ShortVarDeclNode) Rhs() Node {
+	return n.rhs
+}
+
+func (n *ShortVarDeclNode) SetRhs(v Node) {
+	n.rhs = v
+}
+
+func (n *ShortVarDeclNode) BuildLink() {
+	if !n.Lhs().IsDummy() {
+		lhs := n.Lhs()
+		lhs.BuildLink()
+		lhs.SetParent(n)
+		lhs.SetSelfField("lhs")
+		lhs.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ShortVarDeclNode).SetLhs(n)
+		})
+	}
+	if !n.Rhs().IsDummy() {
+		rhs := n.Rhs()
+		rhs.BuildLink()
+		rhs.SetParent(n)
+		rhs.SetSelfField("rhs")
+		rhs.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ShortVarDeclNode).SetRhs(n)
+		})
+	}
+}
+
+func (n *ShortVarDeclNode) Fields() []string {
+	return []string{
+		"lhs",
+		"rhs",
+	}
+}
+
+func (n *ShortVarDeclNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "lhs" {
+		return n.Lhs()
+	}
+	if field == "rhs" {
+		return n.Rhs()
+	}
+	return nil
+}
+
+func (n *ShortVarDeclNode) SetChild(nodes []Node) {
+	if len(nodes) != 2 {
+		return
+	}
+	n.SetLhs(nodes[0])
+	n.SetRhs(nodes[1])
+}
+
+func (n *ShortVarDeclNode) Fork() Node {
+	_ret := &ShortVarDeclNode{
+		BaseNode: n.BaseNode.fork(),
+		lhs:      n.lhs.Fork(),
+		rhs:      n.rhs.Fork(),
+	}
+	_ret.lhs.SetParent(_ret)
+	_ret.rhs.SetParent(_ret)
+	return _ret
+}
+
+func (n *ShortVarDeclNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.lhs.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.rhs.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ShortVarDeclNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"short_var_decl\""
+	ret["lhs"] = DumpNode(n.Lhs(), hook)
 	ret["rhs"] = DumpNode(n.Rhs(), hook)
 	return ret
 }
@@ -8233,105 +8489,76 @@ func (n *ExprStmtNode) Dump(hook func(Node, map[string]string) string) map[strin
 	return ret
 }
 
-func NewIncDecStmtNode(filePath string, fileContent []rune, x Node, tok Node, start, end Position) Node {
+func NewIncStmtNode(filePath string, fileContent []rune, x Node, start, end Position) Node {
 	if x == nil {
 		x = DummyNode
 	}
-	if tok == nil {
-		tok = DummyNode
-	}
-	_1 := &IncDecStmtNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeIncDecStmt, start, end),
+	_1 := &IncStmtNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeIncStmt, start, end),
 		x:        x,
-		tok:      tok,
 	}
 	creationHook(_1)
 	return _1
 }
 
-type IncDecStmtNode struct {
+type IncStmtNode struct {
 	*BaseNode
-	x   Node
-	tok Node
+	x Node
 }
 
-func (n *IncDecStmtNode) X() Node {
+func (n *IncStmtNode) X() Node {
 	return n.x
 }
 
-func (n *IncDecStmtNode) SetX(v Node) {
+func (n *IncStmtNode) SetX(v Node) {
 	n.x = v
 }
 
-func (n *IncDecStmtNode) Tok() Node {
-	return n.tok
-}
-
-func (n *IncDecStmtNode) SetTok(v Node) {
-	n.tok = v
-}
-
-func (n *IncDecStmtNode) BuildLink() {
+func (n *IncStmtNode) BuildLink() {
 	if !n.X().IsDummy() {
 		x := n.X()
 		x.BuildLink()
 		x.SetParent(n)
 		x.SetSelfField("x")
 		x.SetReplaceSelf(func(n Node) {
-			n.Parent().(*IncDecStmtNode).SetX(n)
-		})
-	}
-	if !n.Tok().IsDummy() {
-		tok := n.Tok()
-		tok.BuildLink()
-		tok.SetParent(n)
-		tok.SetSelfField("tok")
-		tok.SetReplaceSelf(func(n Node) {
-			n.Parent().(*IncDecStmtNode).SetTok(n)
+			n.Parent().(*IncStmtNode).SetX(n)
 		})
 	}
 }
 
-func (n *IncDecStmtNode) Fields() []string {
+func (n *IncStmtNode) Fields() []string {
 	return []string{
 		"x",
-		"tok",
 	}
 }
 
-func (n *IncDecStmtNode) Child(field string) Node {
+func (n *IncStmtNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
 	if field == "x" {
 		return n.X()
 	}
-	if field == "tok" {
-		return n.Tok()
-	}
 	return nil
 }
 
-func (n *IncDecStmtNode) SetChild(nodes []Node) {
-	if len(nodes) != 2 {
+func (n *IncStmtNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
 		return
 	}
 	n.SetX(nodes[0])
-	n.SetTok(nodes[1])
 }
 
-func (n *IncDecStmtNode) Fork() Node {
-	_ret := &IncDecStmtNode{
+func (n *IncStmtNode) Fork() Node {
+	_ret := &IncStmtNode{
 		BaseNode: n.BaseNode.fork(),
 		x:        n.x.Fork(),
-		tok:      n.tok.Fork(),
 	}
 	_ret.x.SetParent(_ret)
-	_ret.tok.SetParent(_ret)
 	return _ret
 }
 
-func (n *IncDecStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *IncStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -8342,7 +8569,97 @@ func (n *IncDecStmtNode) Visit(beforeChildren func(node Node) (visitChildren, ex
 	if n.x.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.tok.Visit(beforeChildren, afterChildren) {
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *IncStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"inc_stmt\""
+	ret["x"] = DumpNode(n.X(), hook)
+	return ret
+}
+
+func NewDecStmtNode(filePath string, fileContent []rune, x Node, start, end Position) Node {
+	if x == nil {
+		x = DummyNode
+	}
+	_1 := &DecStmtNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeDecStmt, start, end),
+		x:        x,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type DecStmtNode struct {
+	*BaseNode
+	x Node
+}
+
+func (n *DecStmtNode) X() Node {
+	return n.x
+}
+
+func (n *DecStmtNode) SetX(v Node) {
+	n.x = v
+}
+
+func (n *DecStmtNode) BuildLink() {
+	if !n.X().IsDummy() {
+		x := n.X()
+		x.BuildLink()
+		x.SetParent(n)
+		x.SetSelfField("x")
+		x.SetReplaceSelf(func(n Node) {
+			n.Parent().(*DecStmtNode).SetX(n)
+		})
+	}
+}
+
+func (n *DecStmtNode) Fields() []string {
+	return []string{
+		"x",
+	}
+}
+
+func (n *DecStmtNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "x" {
+		return n.X()
+	}
+	return nil
+}
+
+func (n *DecStmtNode) SetChild(nodes []Node) {
+	if len(nodes) != 1 {
+		return
+	}
+	n.SetX(nodes[0])
+}
+
+func (n *DecStmtNode) Fork() Node {
+	_ret := &DecStmtNode{
+		BaseNode: n.BaseNode.fork(),
+		x:        n.x.Fork(),
+	}
+	_ret.x.SetParent(_ret)
+	return _ret
+}
+
+func (n *DecStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.x.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if afterChildren(n) {
@@ -8351,11 +8668,10 @@ func (n *IncDecStmtNode) Visit(beforeChildren func(node Node) (visitChildren, ex
 	return false
 }
 
-func (n *IncDecStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *DecStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"inc_dec_stmt\""
+	ret["kind"] = "\"dec_stmt\""
 	ret["x"] = DumpNode(n.X(), hook)
-	ret["tok"] = DumpNode(n.Tok(), hook)
 	return ret
 }
 
@@ -8743,91 +9059,78 @@ func (n *ForStmtNode) Dump(hook func(Node, map[string]string) string) map[string
 	return ret
 }
 
-func NewRangeStmtNode(filePath string, fileContent []rune, key Node, value Node, x Node, body Node, tok Node, start, end Position) Node {
+func NewForAssignRangeStmtNode(filePath string, fileContent []rune, key Node, value Node, object Node, body Node, start, end Position) Node {
 	if key == nil {
 		key = DummyNode
 	}
 	if value == nil {
 		value = DummyNode
 	}
-	if x == nil {
-		x = DummyNode
+	if object == nil {
+		object = DummyNode
 	}
 	if body == nil {
 		body = DummyNode
 	}
-	if tok == nil {
-		tok = DummyNode
-	}
-	_1 := &RangeStmtNode{
-		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeRangeStmt, start, end),
+	_1 := &ForAssignRangeStmtNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeForAssignRangeStmt, start, end),
 		key:      key,
 		value:    value,
-		x:        x,
+		object:   object,
 		body:     body,
-		tok:      tok,
 	}
 	creationHook(_1)
 	return _1
 }
 
-type RangeStmtNode struct {
+type ForAssignRangeStmtNode struct {
 	*BaseNode
-	key   Node
-	value Node
-	x     Node
-	body  Node
-	tok   Node
+	key    Node
+	value  Node
+	object Node
+	body   Node
 }
 
-func (n *RangeStmtNode) Key() Node {
+func (n *ForAssignRangeStmtNode) Key() Node {
 	return n.key
 }
 
-func (n *RangeStmtNode) SetKey(v Node) {
+func (n *ForAssignRangeStmtNode) SetKey(v Node) {
 	n.key = v
 }
 
-func (n *RangeStmtNode) Value() Node {
+func (n *ForAssignRangeStmtNode) Value() Node {
 	return n.value
 }
 
-func (n *RangeStmtNode) SetValue(v Node) {
+func (n *ForAssignRangeStmtNode) SetValue(v Node) {
 	n.value = v
 }
 
-func (n *RangeStmtNode) X() Node {
-	return n.x
+func (n *ForAssignRangeStmtNode) Object() Node {
+	return n.object
 }
 
-func (n *RangeStmtNode) SetX(v Node) {
-	n.x = v
+func (n *ForAssignRangeStmtNode) SetObject(v Node) {
+	n.object = v
 }
 
-func (n *RangeStmtNode) Body() Node {
+func (n *ForAssignRangeStmtNode) Body() Node {
 	return n.body
 }
 
-func (n *RangeStmtNode) SetBody(v Node) {
+func (n *ForAssignRangeStmtNode) SetBody(v Node) {
 	n.body = v
 }
 
-func (n *RangeStmtNode) Tok() Node {
-	return n.tok
-}
-
-func (n *RangeStmtNode) SetTok(v Node) {
-	n.tok = v
-}
-
-func (n *RangeStmtNode) BuildLink() {
+func (n *ForAssignRangeStmtNode) BuildLink() {
 	if !n.Key().IsDummy() {
 		key := n.Key()
 		key.BuildLink()
 		key.SetParent(n)
 		key.SetSelfField("key")
 		key.SetReplaceSelf(func(n Node) {
-			n.Parent().(*RangeStmtNode).SetKey(n)
+			n.Parent().(*ForAssignRangeStmtNode).SetKey(n)
 		})
 	}
 	if !n.Value().IsDummy() {
@@ -8836,16 +9139,16 @@ func (n *RangeStmtNode) BuildLink() {
 		value.SetParent(n)
 		value.SetSelfField("value")
 		value.SetReplaceSelf(func(n Node) {
-			n.Parent().(*RangeStmtNode).SetValue(n)
+			n.Parent().(*ForAssignRangeStmtNode).SetValue(n)
 		})
 	}
-	if !n.X().IsDummy() {
-		x := n.X()
-		x.BuildLink()
-		x.SetParent(n)
-		x.SetSelfField("x")
-		x.SetReplaceSelf(func(n Node) {
-			n.Parent().(*RangeStmtNode).SetX(n)
+	if !n.Object().IsDummy() {
+		object := n.Object()
+		object.BuildLink()
+		object.SetParent(n)
+		object.SetSelfField("object")
+		object.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForAssignRangeStmtNode).SetObject(n)
 		})
 	}
 	if !n.Body().IsDummy() {
@@ -8854,31 +9157,21 @@ func (n *RangeStmtNode) BuildLink() {
 		body.SetParent(n)
 		body.SetSelfField("body")
 		body.SetReplaceSelf(func(n Node) {
-			n.Parent().(*RangeStmtNode).SetBody(n)
-		})
-	}
-	if !n.Tok().IsDummy() {
-		tok := n.Tok()
-		tok.BuildLink()
-		tok.SetParent(n)
-		tok.SetSelfField("tok")
-		tok.SetReplaceSelf(func(n Node) {
-			n.Parent().(*RangeStmtNode).SetTok(n)
+			n.Parent().(*ForAssignRangeStmtNode).SetBody(n)
 		})
 	}
 }
 
-func (n *RangeStmtNode) Fields() []string {
+func (n *ForAssignRangeStmtNode) Fields() []string {
 	return []string{
 		"key",
 		"value",
-		"x",
+		"object",
 		"body",
-		"tok",
 	}
 }
 
-func (n *RangeStmtNode) Child(field string) Node {
+func (n *ForAssignRangeStmtNode) Child(field string) Node {
 	if field == "" {
 		return nil
 	}
@@ -8888,47 +9181,41 @@ func (n *RangeStmtNode) Child(field string) Node {
 	if field == "value" {
 		return n.Value()
 	}
-	if field == "x" {
-		return n.X()
+	if field == "object" {
+		return n.Object()
 	}
 	if field == "body" {
 		return n.Body()
 	}
-	if field == "tok" {
-		return n.Tok()
-	}
 	return nil
 }
 
-func (n *RangeStmtNode) SetChild(nodes []Node) {
-	if len(nodes) != 5 {
+func (n *ForAssignRangeStmtNode) SetChild(nodes []Node) {
+	if len(nodes) != 4 {
 		return
 	}
 	n.SetKey(nodes[0])
 	n.SetValue(nodes[1])
-	n.SetX(nodes[2])
+	n.SetObject(nodes[2])
 	n.SetBody(nodes[3])
-	n.SetTok(nodes[4])
 }
 
-func (n *RangeStmtNode) Fork() Node {
-	_ret := &RangeStmtNode{
+func (n *ForAssignRangeStmtNode) Fork() Node {
+	_ret := &ForAssignRangeStmtNode{
 		BaseNode: n.BaseNode.fork(),
 		key:      n.key.Fork(),
 		value:    n.value.Fork(),
-		x:        n.x.Fork(),
+		object:   n.object.Fork(),
 		body:     n.body.Fork(),
-		tok:      n.tok.Fork(),
 	}
 	_ret.key.SetParent(_ret)
 	_ret.value.SetParent(_ret)
-	_ret.x.SetParent(_ret)
+	_ret.object.SetParent(_ret)
 	_ret.body.SetParent(_ret)
-	_ret.tok.SetParent(_ret)
 	return _ret
 }
 
-func (n *RangeStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+func (n *ForAssignRangeStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
 	vc, e := beforeChildren(n)
 	if e {
 		return true
@@ -8942,13 +9229,10 @@ func (n *RangeStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exi
 	if n.value.Visit(beforeChildren, afterChildren) {
 		return true
 	}
-	if n.x.Visit(beforeChildren, afterChildren) {
+	if n.object.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if n.body.Visit(beforeChildren, afterChildren) {
-		return true
-	}
-	if n.tok.Visit(beforeChildren, afterChildren) {
 		return true
 	}
 	if afterChildren(n) {
@@ -8957,14 +9241,205 @@ func (n *RangeStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exi
 	return false
 }
 
-func (n *RangeStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+func (n *ForAssignRangeStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
 	ret := make(map[string]string)
-	ret["kind"] = "\"range_stmt\""
+	ret["kind"] = "\"for_assign_range_stmt\""
 	ret["key"] = DumpNode(n.Key(), hook)
 	ret["value"] = DumpNode(n.Value(), hook)
-	ret["x"] = DumpNode(n.X(), hook)
+	ret["object"] = DumpNode(n.Object(), hook)
 	ret["body"] = DumpNode(n.Body(), hook)
-	ret["tok"] = DumpNode(n.Tok(), hook)
+	return ret
+}
+
+func NewForDeclRangeStmtNode(filePath string, fileContent []rune, key Node, value Node, object Node, body Node, start, end Position) Node {
+	if key == nil {
+		key = DummyNode
+	}
+	if value == nil {
+		value = DummyNode
+	}
+	if object == nil {
+		object = DummyNode
+	}
+	if body == nil {
+		body = DummyNode
+	}
+	_1 := &ForDeclRangeStmtNode{
+		BaseNode: NewBaseNode(filePath, fileContent, NodeTypeForDeclRangeStmt, start, end),
+		key:      key,
+		value:    value,
+		object:   object,
+		body:     body,
+	}
+	creationHook(_1)
+	return _1
+}
+
+type ForDeclRangeStmtNode struct {
+	*BaseNode
+	key    Node
+	value  Node
+	object Node
+	body   Node
+}
+
+func (n *ForDeclRangeStmtNode) Key() Node {
+	return n.key
+}
+
+func (n *ForDeclRangeStmtNode) SetKey(v Node) {
+	n.key = v
+}
+
+func (n *ForDeclRangeStmtNode) Value() Node {
+	return n.value
+}
+
+func (n *ForDeclRangeStmtNode) SetValue(v Node) {
+	n.value = v
+}
+
+func (n *ForDeclRangeStmtNode) Object() Node {
+	return n.object
+}
+
+func (n *ForDeclRangeStmtNode) SetObject(v Node) {
+	n.object = v
+}
+
+func (n *ForDeclRangeStmtNode) Body() Node {
+	return n.body
+}
+
+func (n *ForDeclRangeStmtNode) SetBody(v Node) {
+	n.body = v
+}
+
+func (n *ForDeclRangeStmtNode) BuildLink() {
+	if !n.Key().IsDummy() {
+		key := n.Key()
+		key.BuildLink()
+		key.SetParent(n)
+		key.SetSelfField("key")
+		key.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForDeclRangeStmtNode).SetKey(n)
+		})
+	}
+	if !n.Value().IsDummy() {
+		value := n.Value()
+		value.BuildLink()
+		value.SetParent(n)
+		value.SetSelfField("value")
+		value.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForDeclRangeStmtNode).SetValue(n)
+		})
+	}
+	if !n.Object().IsDummy() {
+		object := n.Object()
+		object.BuildLink()
+		object.SetParent(n)
+		object.SetSelfField("object")
+		object.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForDeclRangeStmtNode).SetObject(n)
+		})
+	}
+	if !n.Body().IsDummy() {
+		body := n.Body()
+		body.BuildLink()
+		body.SetParent(n)
+		body.SetSelfField("body")
+		body.SetReplaceSelf(func(n Node) {
+			n.Parent().(*ForDeclRangeStmtNode).SetBody(n)
+		})
+	}
+}
+
+func (n *ForDeclRangeStmtNode) Fields() []string {
+	return []string{
+		"key",
+		"value",
+		"object",
+		"body",
+	}
+}
+
+func (n *ForDeclRangeStmtNode) Child(field string) Node {
+	if field == "" {
+		return nil
+	}
+	if field == "key" {
+		return n.Key()
+	}
+	if field == "value" {
+		return n.Value()
+	}
+	if field == "object" {
+		return n.Object()
+	}
+	if field == "body" {
+		return n.Body()
+	}
+	return nil
+}
+
+func (n *ForDeclRangeStmtNode) SetChild(nodes []Node) {
+	if len(nodes) != 4 {
+		return
+	}
+	n.SetKey(nodes[0])
+	n.SetValue(nodes[1])
+	n.SetObject(nodes[2])
+	n.SetBody(nodes[3])
+}
+
+func (n *ForDeclRangeStmtNode) Fork() Node {
+	_ret := &ForDeclRangeStmtNode{
+		BaseNode: n.BaseNode.fork(),
+		key:      n.key.Fork(),
+		value:    n.value.Fork(),
+		object:   n.object.Fork(),
+		body:     n.body.Fork(),
+	}
+	_ret.key.SetParent(_ret)
+	_ret.value.SetParent(_ret)
+	_ret.object.SetParent(_ret)
+	_ret.body.SetParent(_ret)
+	return _ret
+}
+
+func (n *ForDeclRangeStmtNode) Visit(beforeChildren func(node Node) (visitChildren, exit bool), afterChildren func(node Node) (exit bool)) (exit bool) {
+	vc, e := beforeChildren(n)
+	if e {
+		return true
+	}
+	if !vc {
+		return false
+	}
+	if n.key.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.value.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.object.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if n.body.Visit(beforeChildren, afterChildren) {
+		return true
+	}
+	if afterChildren(n) {
+		return true
+	}
+	return false
+}
+
+func (n *ForDeclRangeStmtNode) Dump(hook func(Node, map[string]string) string) map[string]string {
+	ret := make(map[string]string)
+	ret["kind"] = "\"for_decl_range_stmt\""
+	ret["key"] = DumpNode(n.Key(), hook)
+	ret["value"] = DumpNode(n.Value(), hook)
+	ret["object"] = DumpNode(n.Object(), hook)
+	ret["body"] = DumpNode(n.Body(), hook)
 	return ret
 }
 
@@ -13991,7 +14466,8 @@ func (ps *Parser) returnStmt() Node {
 simple_stmt:
 | assignment
 | short_val_decl
-| inc_dec_stmt
+| inc_stmt
+| dec_stmt
 | send_stmt
 | expression_stmt
 */
@@ -14016,11 +14492,21 @@ func (ps *Parser) simpleStmt() Node {
 		}
 		return _1
 	}
-	/* inc_dec_stmt
+	/* inc_stmt
 	 */
 	for {
 		var _1 Node
-		_1 = ps.incDecStmt()
+		_1 = ps.incStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* dec_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.decStmt()
 		if _1 == nil {
 			break
 		}
@@ -14041,6 +14527,304 @@ func (ps *Parser) simpleStmt() Node {
 	for {
 		var _1 Node
 		_1 = ps.expressionStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	return nil
+}
+
+/*
+inc_stmt:
+| x=expression '++' {inc_stmt(x)}
+*/
+func (ps *Parser) incStmt() Node {
+	/* x=expression '++' {inc_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		x = ps.expression()
+		if x == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpPlusPlus)
+		if _1 == nil {
+			break
+		}
+		return NewIncStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+dec_stmt:
+| x=expression '--' {dec_stmt(x)}
+*/
+func (ps *Parser) decStmt() Node {
+	/* x=expression '--' {dec_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		x = ps.expression()
+		if x == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpMinusMinus)
+		if _1 == nil {
+			break
+		}
+		return NewDecStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+send_stmt:
+| x=expression '<-' y=expression {send_stmt(x,y)}
+*/
+func (ps *Parser) sendStmt() Node {
+	/* x=expression '<-' y=expression {send_stmt(x,y)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var y Node
+		x = ps.expression()
+		if x == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLessMinus)
+		if _1 == nil {
+			break
+		}
+		y = ps.expression()
+		if y == nil {
+			break
+		}
+		return NewSendStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+short_val_decl:
+| l=identifier_list ':=' r=expression_list {short_var_decl(l, r)}
+*/
+func (ps *Parser) shortValDecl() Node {
+	/* l=identifier_list ':=' r=expression_list {short_var_decl(l, r)}
+	 */
+	pos := ps._mark()
+	for {
+		var l Node
+		var r Node
+		l = ps.identifierList()
+		if l == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpColonEqual)
+		if _1 == nil {
+			break
+		}
+		r = ps.expressionList()
+		if r == nil {
+			break
+		}
+		return NewShortVarDeclNode(ps._filePath, ps._fileContent, l, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+assignment:
+| l=expression_list '=' r=expression_list {assign_stmt(l, r)}
+*/
+func (ps *Parser) assignment() Node {
+	/* l=expression_list '=' r=expression_list {assign_stmt(l, r)}
+	 */
+	pos := ps._mark()
+	for {
+		var l Node
+		var r Node
+		l = ps.expressionList()
+		if l == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpEqual)
+		if _1 == nil {
+			break
+		}
+		r = ps.expressionList()
+		if r == nil {
+			break
+		}
+		return NewAssignStmtNode(ps._filePath, ps._fileContent, l, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+aug_assignment:
+| l=expression_list op=aug_op r=expression_list {aug_assign_stmt(l, op, r)}
+*/
+func (ps *Parser) augAssignment() Node {
+	/* l=expression_list op=aug_op r=expression_list {aug_assign_stmt(l, op, r)}
+	 */
+	pos := ps._mark()
+	for {
+		var l Node
+		var op Node
+		var r Node
+		l = ps.expressionList()
+		if l == nil {
+			break
+		}
+		op = ps.augOp()
+		if op == nil {
+			break
+		}
+		r = ps.expressionList()
+		if r == nil {
+			break
+		}
+		return NewAugAssignStmtNode(ps._filePath, ps._fileContent, l, op, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+aug_op:
+| '+='
+| '-='
+| '|='
+| '^='
+| '*='
+| '/='
+| '%='
+| '<<='
+| '>>='
+| '&='
+| '&^='
+*/
+func (ps *Parser) augOp() Node {
+	/* '+='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpPlusEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '-='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpMinusEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '|='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpBarEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '^='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpCaretEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '*='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpStarEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '/='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpSlashEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '%='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpPercentEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '<<='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLessLessEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '>>='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpGreaterGreaterEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '&='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpAndEqual)
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* '&^='
+	 */
+	for {
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpAndCaretEqual)
 		if _1 == nil {
 			break
 		}
@@ -14267,11 +15051,8 @@ func (ps *Parser) ifStmt() Node {
 for_stmt:
 | 'for' [ c=expression? ] b=block {for_stmt(_,c,_,b)}
 | 'for' [ i=simple_stmt? ';' c=expression? ';' post=simple_stmt? ] b=block {for_stmt(i,c,post,b)}
-| 'for' [ 'range' x=expression ] b=block {range_stmt(_,_,x,b,_)}
-| 'for' [ k=expression ',' v=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,v,x,b,tok)}
-| 'for' [ k=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,_,x,b,tok)}
-_group_3 <-- (':='|'=')
-_group_3 <-- (':='|'=')
+| 'for' [ (k=expression (',' v=expression)?)? ':=' 'range' x=expression ] b=block {for_decl_range_stmt(k,v,x,b)}
+| 'for' [ (k=expression (',' v=expression)?)? '=' 'range' x=expression ] b=block {for_assign_range_stmt(k,v,x,b)}
 */
 func (ps *Parser) forStmt() Node {
 	/* 'for' [ c=expression? ] b=block {for_stmt(_,c,_,b)}
@@ -14349,48 +15130,11 @@ func (ps *Parser) forStmt() Node {
 		return NewForStmtNode(ps._filePath, ps._fileContent, i, c, post, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'for' [ 'range' x=expression ] b=block {range_stmt(_,_,x,b,_)}
-	 */
-	for {
-		var b Node
-		var x Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwFor)
-		if _1 == nil {
-			break
-		}
-		_break := true
-		ps._enter()
-		for {
-			var _2 Node
-			_2 = ps._expectK(TokenTypeKwRange)
-			if _2 == nil {
-				break
-			}
-			x = ps.expression()
-			if x == nil {
-				break
-			}
-			_break = false
-			break
-		}
-		ps._leave()
-		if _break {
-			break
-		}
-		b = ps.block()
-		if b == nil {
-			break
-		}
-		return NewRangeStmtNode(ps._filePath, ps._fileContent, nil, nil, x, b, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* 'for' [ k=expression ',' v=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,v,x,b,tok)}
+	/* 'for' [ (k=expression (',' v=expression)?)? ':=' 'range' x=expression ] b=block {for_decl_range_stmt(k,v,x,b)}
 	 */
 	for {
 		var b Node
 		var k Node
-		var tok Node
 		var v Node
 		var x Node
 		var _1 Node
@@ -14401,26 +15145,56 @@ func (ps *Parser) forStmt() Node {
 		_break := true
 		ps._enter()
 		for {
-			k = ps.expression()
-			if k == nil {
-				break
-			}
 			var _2 Node
-			_2 = ps._expectK(TokenTypeOpComma)
-			if _2 == nil {
+			for {
+				_ok := false
+				_p := ps._mark()
+				for {
+					k = ps.expression()
+					if k == nil {
+						break
+					}
+					for {
+						_ok1 := false
+						_p1 := ps._mark()
+						for {
+							var _3 Node
+							_3 = ps._expectK(TokenTypeOpComma)
+							if _3 == nil {
+								break
+							}
+							v = ps.expression()
+							if v == nil {
+								break
+							}
+							_2 = v
+							_ok1 = true
+							break
+						}
+						if !_ok1 {
+							ps._reset(_p1)
+						}
+						break
+					}
+					_ = _2
+					_ok = true
+					break
+				}
+				if !_ok {
+					ps._reset(_p)
+					k = nil
+				}
 				break
 			}
-			v = ps.expression()
-			if v == nil {
+			_ = _2
+			var _4 Node
+			_4 = ps._expectK(TokenTypeOpColonEqual)
+			if _4 == nil {
 				break
 			}
-			tok = ps._group3()
-			if tok == nil {
-				break
-			}
-			var _3 Node
-			_3 = ps._expectK(TokenTypeKwRange)
-			if _3 == nil {
+			var _5 Node
+			_5 = ps._expectK(TokenTypeKwRange)
+			if _5 == nil {
 				break
 			}
 			x = ps.expression()
@@ -14438,15 +15212,15 @@ func (ps *Parser) forStmt() Node {
 		if b == nil {
 			break
 		}
-		return NewRangeStmtNode(ps._filePath, ps._fileContent, k, v, x, b, tok, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewForDeclRangeStmtNode(ps._filePath, ps._fileContent, k, v, x, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	/* 'for' [ k=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,_,x,b,tok)}
+	/* 'for' [ (k=expression (',' v=expression)?)? '=' 'range' x=expression ] b=block {for_assign_range_stmt(k,v,x,b)}
 	 */
 	for {
 		var b Node
 		var k Node
-		var tok Node
+		var v Node
 		var x Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwFor)
@@ -14456,17 +15230,56 @@ func (ps *Parser) forStmt() Node {
 		_break := true
 		ps._enter()
 		for {
-			k = ps.expression()
-			if k == nil {
-				break
-			}
-			tok = ps._group3()
-			if tok == nil {
-				break
-			}
 			var _2 Node
-			_2 = ps._expectK(TokenTypeKwRange)
-			if _2 == nil {
+			for {
+				_ok := false
+				_p := ps._mark()
+				for {
+					k = ps.expression()
+					if k == nil {
+						break
+					}
+					for {
+						_ok1 := false
+						_p1 := ps._mark()
+						for {
+							var _3 Node
+							_3 = ps._expectK(TokenTypeOpComma)
+							if _3 == nil {
+								break
+							}
+							v = ps.expression()
+							if v == nil {
+								break
+							}
+							_2 = v
+							_ok1 = true
+							break
+						}
+						if !_ok1 {
+							ps._reset(_p1)
+						}
+						break
+					}
+					_ = _2
+					_ok = true
+					break
+				}
+				if !_ok {
+					ps._reset(_p)
+					k = nil
+				}
+				break
+			}
+			_ = _2
+			var _4 Node
+			_4 = ps._expectK(TokenTypeOpEqual)
+			if _4 == nil {
+				break
+			}
+			var _5 Node
+			_5 = ps._expectK(TokenTypeKwRange)
+			if _5 == nil {
 				break
 			}
 			x = ps.expression()
@@ -14484,7 +15297,7 @@ func (ps *Parser) forStmt() Node {
 		if b == nil {
 			break
 		}
-		return NewRangeStmtNode(ps._filePath, ps._fileContent, k, nil, x, b, tok, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewForAssignRangeStmtNode(ps._filePath, ps._fileContent, k, v, x, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -15121,261 +15934,6 @@ func (ps *Parser) expressionStmt() Node {
 }
 
 /*
-send_stmt:
-| x=expression '<-' y=expression {send_stmt(x,y)}
-*/
-func (ps *Parser) sendStmt() Node {
-	/* x=expression '<-' y=expression {send_stmt(x,y)}
-	 */
-	pos := ps._mark()
-	for {
-		var x Node
-		var y Node
-		x = ps.expression()
-		if x == nil {
-			break
-		}
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLessMinus)
-		if _1 == nil {
-			break
-		}
-		y = ps.expression()
-		if y == nil {
-			break
-		}
-		return NewSendStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-inc_dec_stmt:
-| x=expression y=('++'|'--') {inc_dec_stmt(x,y)}
-_group_4 <-- ('++'|'--')
-*/
-func (ps *Parser) incDecStmt() Node {
-	/* x=expression y=('++'|'--') {inc_dec_stmt(x,y)}
-	 */
-	pos := ps._mark()
-	for {
-		var x Node
-		var y Node
-		x = ps.expression()
-		if x == nil {
-			break
-		}
-		y = ps._group4()
-		if y == nil {
-			break
-		}
-		return NewIncDecStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-assignment:
-| l=expression_list op=assign_op r=expression_list {assign_stmt(l, op, r)}
-*/
-func (ps *Parser) assignment() Node {
-	/* l=expression_list op=assign_op r=expression_list {assign_stmt(l, op, r)}
-	 */
-	pos := ps._mark()
-	for {
-		var l Node
-		var op Node
-		var r Node
-		l = ps.expressionList()
-		if l == nil {
-			break
-		}
-		op = ps.assignOp()
-		if op == nil {
-			break
-		}
-		r = ps.expressionList()
-		if r == nil {
-			break
-		}
-		return NewAssignStmtNode(ps._filePath, ps._fileContent, l, op, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-assign_op:
-| '='
-| '+='
-| '-='
-| '|='
-| '^='
-| '*='
-| '/='
-| '%='
-| '<<='
-| '>>='
-| '&='
-| '&^='
-*/
-func (ps *Parser) assignOp() Node {
-	/* '='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '+='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpPlusEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '-='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpMinusEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '|='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpBarEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '^='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpCaretEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '*='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpStarEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '/='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpSlashEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '%='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpPercentEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '<<='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLessLessEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '>>='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpGreaterGreaterEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '&='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpAndEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '&^='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpAndCaretEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	return nil
-}
-
-/*
-short_val_decl:
-| l=identifier_list op=':=' r=expression_list {assign_stmt(l, op, r)}
-*/
-func (ps *Parser) shortValDecl() Node {
-	/* l=identifier_list op=':=' r=expression_list {assign_stmt(l, op, r)}
-	 */
-	pos := ps._mark()
-	for {
-		var l Node
-		var op Node
-		var r Node
-		l = ps.identifierList()
-		if l == nil {
-			break
-		}
-		op = ps._expectK(TokenTypeOpColonEqual)
-		if op == nil {
-			break
-		}
-		r = ps.expressionList()
-		if r == nil {
-			break
-		}
-		return NewAssignStmtNode(ps._filePath, ps._fileContent, l, op, r, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
 type:
 | type_name_or_generic_type_instantiation
 | type_lit
@@ -15685,7 +16243,7 @@ method_spec_and_interface_type_name_semi:
 | method_spec_semi
 | interface_type_name_semi
 | '|'.('~'? t=type {t})+ pseudo_semi {field(_,_,_)}
-_group_5 <-- ('~'? t=type {t})
+_group_3 <-- ('~'? t=type {t})
 */
 func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 	/* method_spec_semi
@@ -15715,7 +16273,7 @@ func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 		var _1 Node
 		_2 := make([]Node, 0)
 		var _3, _4 Node
-		_3 = ps._group5()
+		_3 = ps._group3()
 		if _3 == nil {
 			break
 		}
@@ -15726,7 +16284,7 @@ func (ps *Parser) methodSpecAndInterfaceTypeNameSemi() Node {
 			if _4 == nil {
 				break
 			}
-			_3 = ps._group5()
+			_3 = ps._group3()
 			if _3 == nil {
 				ps._reset(_p)
 				break
@@ -15799,7 +16357,7 @@ func (ps *Parser) interfaceTypeNameSemi() Node {
 /*
 channel_type:
 | t=(a='chan' b='<-' {_pseudo_token(a, b)} | a='<-' b='chan' {_pseudo_token(a, b)} | 'chan') x=type {chan_type(t, x)}
-_group_6 <-- (a='chan' b='<-' {_pseudo_token(a, b)} | a='<-' b='chan' {_pseudo_token(a, b)} | 'chan')
+_group_4 <-- (a='chan' b='<-' {_pseudo_token(a, b)} | a='<-' b='chan' {_pseudo_token(a, b)} | 'chan')
 */
 func (ps *Parser) channelType() Node {
 	/* t=(a='chan' b='<-' {_pseudo_token(a, b)} | a='<-' b='chan' {_pseudo_token(a, b)} | 'chan') x=type {chan_type(t, x)}
@@ -15808,7 +16366,7 @@ func (ps *Parser) channelType() Node {
 	for {
 		var t Node
 		var x Node
-		t = ps._group6()
+		t = ps._group4()
 		if t == nil {
 			break
 		}
@@ -17766,67 +18324,9 @@ func (ps *Parser) _group2() Node {
 
 /*
 _group_3:
-| ':='
-| '='
-*/
-func (ps *Parser) _group3() Node {
-	/* ':='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpColonEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '='
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpEqual)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	return nil
-}
-
-/*
-_group_4:
-| '++'
-| '--'
-*/
-func (ps *Parser) _group4() Node {
-	/* '++'
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpPlusPlus)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* '--'
-	 */
-	for {
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpMinusMinus)
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	return nil
-}
-
-/*
-_group_5:
 | '~'? t=type {t}
 */
-func (ps *Parser) _group5() Node {
+func (ps *Parser) _group3() Node {
 	/* '~'? t=type {t}
 	 */
 	pos := ps._mark()
@@ -17846,12 +18346,12 @@ func (ps *Parser) _group5() Node {
 }
 
 /*
-_group_6:
+_group_4:
 | a='chan' b='<-' {_pseudo_token(a, b)}
 | a='<-' b='chan' {_pseudo_token(a, b)}
 | 'chan'
 */
-func (ps *Parser) _group6() Node {
+func (ps *Parser) _group4() Node {
 	/* a='chan' b='<-' {_pseudo_token(a, b)}
 	 */
 	pos := ps._mark()

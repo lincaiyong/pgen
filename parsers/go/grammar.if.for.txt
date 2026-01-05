@@ -6,7 +6,7 @@ if_stmt:
 
 for_stmt:
     | 'for' [ c=expression? ] b=block {for_stmt(_,c,_,b)}
-    | 'for' [ i=simple_stmt? ';' c=expression? ';' post=simple_stmt? ] b=block {for_stmt(i,c,post,b)}
-    | 'for' [ 'range' x=expression ] b=block {range_stmt(_,_,x,b,_)}
-    | 'for' [ k=expression ',' v=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,v,x,b,tok)}
-    | 'for' [ k=expression tok=(':='|'=') 'range' x=expression ] b=block {range_stmt(k,_,x,b,tok)}
+    | 'for' [ i=simple_stmt? ';' c=expression? ';' u=simple_stmt? ] b=block {for_stmt(i,c,u,b)}
+    | 'for' [ (k=expression (',' v=expression)?)? ':=' 'range' x=expression ] b=block {for_decl_range_stmt(k,v,x,b)}
+    | 'for' [ (k=expression (',' v=expression)?)? '=' 'range' x=expression ] b=block {for_assign_range_stmt(k,v,x,b)}
+

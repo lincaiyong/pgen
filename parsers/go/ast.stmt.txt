@@ -1,13 +1,20 @@
-assign_stmt         <lhs op rhs>
+assign_stmt         <lhs rhs>
+aug_assign_stmt     <lhs op rhs>
+short_var_decl      <lhs rhs>
+
 block_stmt          <list>
 branch_stmt         <tok label>
 
 send_stmt           <chan value>
 expr_stmt           <x>
-inc_dec_stmt        <x tok>
+inc_stmt            <x>
+dec_stmt            <x>
+
 if_stmt             <init cond body else>
 for_stmt            <init cond post body>
-range_stmt          <key value x body tok>
+for_assign_range_stmt   <key value object body>
+for_decl_range_stmt     <key value object body>
+
 select_stmt         <body>
 switch_stmt         <init tag body>
 type_switch_stmt    <init assign body>

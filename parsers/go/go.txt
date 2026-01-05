@@ -34,13 +34,6 @@ top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 
 expression_stmt: x=expression {expr_stmt(x)}
 
-send_stmt: x=expression '<-' y=expression {send_stmt(x,y)}
-inc_dec_stmt: x=expression y=('++'|'--') {inc_dec_stmt(x,y)}
-assignment: l=expression_list op=assign_op r=expression_list {assign_stmt(l, op, r)}
-assign_op: '=' | '+=' | '-=' | '|=' | '^=' | '*=' | '/=' | '%=' | '<<=' | '>>=' | '&=' | '&^='
-
-short_val_decl: l=identifier_list op=':=' r=expression_list {assign_stmt(l, op, r)}
-
 
 type:
     | type_name_or_generic_type_instantiation

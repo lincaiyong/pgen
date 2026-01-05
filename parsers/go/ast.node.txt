@@ -1,11 +1,8 @@
 file                <package imports declarations>
 
-
 basic_lit           <value>
 composite_lit       <type elts>
 function_lit            <type body>
-
-
 
 field_list          <list>
 field               <names type tag>
@@ -26,33 +23,20 @@ ident               <x>
 make_expr           <x>
 new_expr            <x>
 
-package_ident   <ident>
 import_dot      <dot>
-import_ident    <ident>
 import_path     <path>
 
-const_ident                 <ident>
-var_ident                   <ident>
-type_ident                  <ident>
-function_ident                  <ident>
-method_ident                <ident>
-
 generic_parameter                   <name type>
-generic_parameter_ident             <ident>
+
 generic_union_constraint            <list>
 generic_underlying_type_constraint  <type>
 generic_type_constraint             <type>
 
 ellipsis_parameter                  <name type>
 parameter                           <name type>
-parameter_ident                     <ident>
 function_result                              <name type>
-function_result_ident                        <ident>
 
 function_decl                       <name generic_parameters parameters results body>
 method_decl                         <receiver name generic_parameters parameters results body>
 
-receiver_ident                      <ident>
-receiver_type_ident                 <ident>
-receiver_generic_type_ident         <ident>
 receiver                            <name star type>

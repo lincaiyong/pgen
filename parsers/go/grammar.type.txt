@@ -1,0 +1,9 @@
+type_decl:
+    | 'type' '(' x=type_spec_semi* ')' {type_decl(x)}
+    | 'type' x=type_spec {type_decl([x])}
+type_spec_semi: x=type_spec pseudo_semi {x}
+type_spec:
+    | x=type_ident t=generic_parameter_decl? '=' y=type {type_eq_spec(x, t, y)}
+    | x=type_ident t=generic_parameter_decl? y=type {type_spec(x, t, y)}
+type_ident: n=IDENT {type_ident(n)}
+

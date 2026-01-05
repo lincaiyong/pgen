@@ -19,3 +19,15 @@ statement:
     | x='fallthrough' {branch_stmt(x,_)}
     | 'defer' x=expression {defer_stmt(x)}
     | block
+
+labeled_stmt:
+    | x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
+    | x=IDENT ':' y=statement {labeled_stmt(x,y)}
+    | x=IDENT ':' {labeled_stmt(x,_)}
+
+simple_stmt:
+    | assignment
+    | short_val_decl
+    | inc_dec_stmt
+    | send_stmt
+    | expression_stmt

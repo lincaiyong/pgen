@@ -11807,6 +11807,34 @@ func (ps *Parser) topLevelDecl() Node {
 }
 
 /*
+block:
+| '{' x=statement_semi_list? '}' {block_stmt(x)}
+*/
+func (ps *Parser) block() Node {
+	/* '{' x=statement_semi_list? '}' {block_stmt(x)}
+	 */
+	pos := ps._mark()
+	for {
+		var x Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLeftBrace)
+		if _1 == nil {
+			break
+		}
+		x = ps.statementSemiList()
+		_ = x
+		var _2 Node
+		_2 = ps._expectK(TokenTypeOpRightBrace)
+		if _2 == nil {
+			break
+		}
+		return NewBlockStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
 function_decl:
 | 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 */
@@ -13046,34 +13074,6 @@ func (ps *Parser) typeConstraint() Node {
 }
 
 /*
-block:
-| '{' x=statement_semi_list? '}' {block_stmt(x)}
-*/
-func (ps *Parser) block() Node {
-	/* '{' x=statement_semi_list? '}' {block_stmt(x)}
-	 */
-	pos := ps._mark()
-	for {
-		var x Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
-		if _1 == nil {
-			break
-		}
-		x = ps.statementSemiList()
-		_ = x
-		var _2 Node
-		_2 = ps._expectK(TokenTypeOpRightBrace)
-		if _2 == nil {
-			break
-		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, x, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
 statement_semi_list:
 | statement_semi+
 */
@@ -13372,37 +13372,345 @@ func (ps *Parser) statement() Node {
 }
 
 /*
-select_body:
-| '{' cases=common_clause* '}' {block_stmt(cases)}
+labeled_stmt:
+| x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
+| x=IDENT ':' y=statement {labeled_stmt(x,y)}
+| x=IDENT ':' {labeled_stmt(x,_)}
 */
-func (ps *Parser) selectBody() Node {
-	/* '{' cases=common_clause* '}' {block_stmt(cases)}
+func (ps *Parser) labeledStmt() Node {
+	/* x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
 	 */
 	pos := ps._mark()
 	for {
-		var cases Node
+		var b Node
+		var x Node
+		x = ps._expectK(TokenTypeIdent)
+		if x == nil {
+			break
+		}
 		var _1 Node
-		_1 = ps._expectK(TokenTypeOpLeftBrace)
+		_1 = ps._expectK(TokenTypeOpColon)
 		if _1 == nil {
 			break
 		}
-		_2 := make([]Node, 0)
-		var _3 Node
-		for {
-			_3 = ps.commonClause()
-			if _3 == nil {
-				break
-			}
-			_2 = append(_2, _3)
-		}
-		cases = NewNodesNode(_2)
-		_ = cases
-		var _4 Node
-		_4 = ps._expectK(TokenTypeOpRightBrace)
-		if _4 == nil {
+		b = ps.emptyBlock()
+		if b == nil {
 			break
 		}
-		return NewBlockStmtNode(ps._filePath, ps._fileContent, cases, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	/* x=IDENT ':' y=statement {labeled_stmt(x,y)}
+	 */
+	for {
+		var x Node
+		var y Node
+		x = ps._expectK(TokenTypeIdent)
+		if x == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpColon)
+		if _1 == nil {
+			break
+		}
+		y = ps.statement()
+		if y == nil {
+			break
+		}
+		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	/* x=IDENT ':' {labeled_stmt(x,_)}
+	 */
+	for {
+		var x Node
+		x = ps._expectK(TokenTypeIdent)
+		if x == nil {
+			break
+		}
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpColon)
+		if _1 == nil {
+			break
+		}
+		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+simple_stmt:
+| assignment
+| short_val_decl
+| inc_dec_stmt
+| send_stmt
+| expression_stmt
+*/
+func (ps *Parser) simpleStmt() Node {
+	/* assignment
+	 */
+	for {
+		var _1 Node
+		_1 = ps.assignment()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* short_val_decl
+	 */
+	for {
+		var _1 Node
+		_1 = ps.shortValDecl()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* inc_dec_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.incDecStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* send_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.sendStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	/* expression_stmt
+	 */
+	for {
+		var _1 Node
+		_1 = ps.expressionStmt()
+		if _1 == nil {
+			break
+		}
+		return _1
+	}
+	return nil
+}
+
+/*
+if_stmt:
+| 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=if_stmt {if_stmt(init, cond, body, else_)}
+| 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=block {if_stmt(init, cond, body, else_)}
+| 'if' [ init=simple_stmt ';' cond=expression ] body=block {if_stmt(init, cond, body, _)}
+| 'if' [ cond=expression ] body=block {if_stmt(_, cond, body, _)}
+*/
+func (ps *Parser) ifStmt() Node {
+	/* 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=if_stmt {if_stmt(init, cond, body, else_)}
+	 */
+	pos := ps._mark()
+	for {
+		var body Node
+		var cond Node
+		var else_ Node
+		var init Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwIf)
+		if _1 == nil {
+			break
+		}
+		_break := true
+		ps._enter()
+		for {
+			var _2 Node
+			for {
+				_ok := false
+				_p := ps._mark()
+				for {
+					init = ps.simpleStmt()
+					if init == nil {
+						break
+					}
+					_2 = ps._expectK(TokenTypeOpSemi)
+					if _2 == nil {
+						break
+					}
+					_ok = true
+					break
+				}
+				if !_ok {
+					ps._reset(_p)
+					init = nil
+				}
+				break
+			}
+			_ = _2
+			cond = ps.expression()
+			if cond == nil {
+				break
+			}
+			_break = false
+			break
+		}
+		ps._leave()
+		if _break {
+			break
+		}
+		body = ps.block()
+		if body == nil {
+			break
+		}
+		var _3 Node
+		_3 = ps._expectK(TokenTypeKwElse)
+		if _3 == nil {
+			break
+		}
+		else_ = ps.ifStmt()
+		if else_ == nil {
+			break
+		}
+		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, else_, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	/* 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=block {if_stmt(init, cond, body, else_)}
+	 */
+	for {
+		var body Node
+		var cond Node
+		var else_ Node
+		var init Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwIf)
+		if _1 == nil {
+			break
+		}
+		_break := true
+		ps._enter()
+		for {
+			var _2 Node
+			for {
+				_ok := false
+				_p := ps._mark()
+				for {
+					init = ps.simpleStmt()
+					if init == nil {
+						break
+					}
+					_2 = ps._expectK(TokenTypeOpSemi)
+					if _2 == nil {
+						break
+					}
+					_ok = true
+					break
+				}
+				if !_ok {
+					ps._reset(_p)
+					init = nil
+				}
+				break
+			}
+			_ = _2
+			cond = ps.expression()
+			if cond == nil {
+				break
+			}
+			_break = false
+			break
+		}
+		ps._leave()
+		if _break {
+			break
+		}
+		body = ps.block()
+		if body == nil {
+			break
+		}
+		var _3 Node
+		_3 = ps._expectK(TokenTypeKwElse)
+		if _3 == nil {
+			break
+		}
+		else_ = ps.block()
+		if else_ == nil {
+			break
+		}
+		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, else_, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	/* 'if' [ init=simple_stmt ';' cond=expression ] body=block {if_stmt(init, cond, body, _)}
+	 */
+	for {
+		var body Node
+		var cond Node
+		var init Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwIf)
+		if _1 == nil {
+			break
+		}
+		_break := true
+		ps._enter()
+		for {
+			init = ps.simpleStmt()
+			if init == nil {
+				break
+			}
+			var _2 Node
+			_2 = ps._expectK(TokenTypeOpSemi)
+			if _2 == nil {
+				break
+			}
+			cond = ps.expression()
+			if cond == nil {
+				break
+			}
+			_break = false
+			break
+		}
+		ps._leave()
+		if _break {
+			break
+		}
+		body = ps.block()
+		if body == nil {
+			break
+		}
+		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	/* 'if' [ cond=expression ] body=block {if_stmt(_, cond, body, _)}
+	 */
+	for {
+		var body Node
+		var cond Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeKwIf)
+		if _1 == nil {
+			break
+		}
+		_break := true
+		ps._enter()
+		for {
+			cond = ps.expression()
+			if cond == nil {
+				break
+			}
+			_break = false
+			break
+		}
+		ps._leave()
+		if _break {
+			break
+		}
+		body = ps.block()
+		if body == nil {
+			break
+		}
+		return NewIfStmtNode(ps._filePath, ps._fileContent, nil, cond, body, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -13630,6 +13938,43 @@ func (ps *Parser) forStmt() Node {
 			break
 		}
 		return NewRangeStmtNode(ps._filePath, ps._fileContent, k, nil, x, b, tok, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
+	}
+	ps._reset(pos)
+	return nil
+}
+
+/*
+select_body:
+| '{' cases=common_clause* '}' {block_stmt(cases)}
+*/
+func (ps *Parser) selectBody() Node {
+	/* '{' cases=common_clause* '}' {block_stmt(cases)}
+	 */
+	pos := ps._mark()
+	for {
+		var cases Node
+		var _1 Node
+		_1 = ps._expectK(TokenTypeOpLeftBrace)
+		if _1 == nil {
+			break
+		}
+		_2 := make([]Node, 0)
+		var _3 Node
+		for {
+			_3 = ps.commonClause()
+			if _3 == nil {
+				break
+			}
+			_2 = append(_2, _3)
+		}
+		cases = NewNodesNode(_2)
+		_ = cases
+		var _4 Node
+		_4 = ps._expectK(TokenTypeOpRightBrace)
+		if _4 == nil {
+			break
+		}
+		return NewBlockStmtNode(ps._filePath, ps._fileContent, cases, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -14184,282 +14529,6 @@ func (ps *Parser) exprCaseClause() Node {
 }
 
 /*
-if_stmt:
-| 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=if_stmt {if_stmt(init, cond, body, else_)}
-| 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=block {if_stmt(init, cond, body, else_)}
-| 'if' [ init=simple_stmt ';' cond=expression ] body=block {if_stmt(init, cond, body, _)}
-| 'if' [ cond=expression ] body=block {if_stmt(_, cond, body, _)}
-*/
-func (ps *Parser) ifStmt() Node {
-	/* 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=if_stmt {if_stmt(init, cond, body, else_)}
-	 */
-	pos := ps._mark()
-	for {
-		var body Node
-		var cond Node
-		var else_ Node
-		var init Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwIf)
-		if _1 == nil {
-			break
-		}
-		_break := true
-		ps._enter()
-		for {
-			var _2 Node
-			for {
-				_ok := false
-				_p := ps._mark()
-				for {
-					init = ps.simpleStmt()
-					if init == nil {
-						break
-					}
-					_2 = ps._expectK(TokenTypeOpSemi)
-					if _2 == nil {
-						break
-					}
-					_ok = true
-					break
-				}
-				if !_ok {
-					ps._reset(_p)
-					init = nil
-				}
-				break
-			}
-			_ = _2
-			cond = ps.expression()
-			if cond == nil {
-				break
-			}
-			_break = false
-			break
-		}
-		ps._leave()
-		if _break {
-			break
-		}
-		body = ps.block()
-		if body == nil {
-			break
-		}
-		var _3 Node
-		_3 = ps._expectK(TokenTypeKwElse)
-		if _3 == nil {
-			break
-		}
-		else_ = ps.ifStmt()
-		if else_ == nil {
-			break
-		}
-		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, else_, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* 'if' [ (init=simple_stmt ';')? cond=expression ] body=block 'else' else_=block {if_stmt(init, cond, body, else_)}
-	 */
-	for {
-		var body Node
-		var cond Node
-		var else_ Node
-		var init Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwIf)
-		if _1 == nil {
-			break
-		}
-		_break := true
-		ps._enter()
-		for {
-			var _2 Node
-			for {
-				_ok := false
-				_p := ps._mark()
-				for {
-					init = ps.simpleStmt()
-					if init == nil {
-						break
-					}
-					_2 = ps._expectK(TokenTypeOpSemi)
-					if _2 == nil {
-						break
-					}
-					_ok = true
-					break
-				}
-				if !_ok {
-					ps._reset(_p)
-					init = nil
-				}
-				break
-			}
-			_ = _2
-			cond = ps.expression()
-			if cond == nil {
-				break
-			}
-			_break = false
-			break
-		}
-		ps._leave()
-		if _break {
-			break
-		}
-		body = ps.block()
-		if body == nil {
-			break
-		}
-		var _3 Node
-		_3 = ps._expectK(TokenTypeKwElse)
-		if _3 == nil {
-			break
-		}
-		else_ = ps.block()
-		if else_ == nil {
-			break
-		}
-		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, else_, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* 'if' [ init=simple_stmt ';' cond=expression ] body=block {if_stmt(init, cond, body, _)}
-	 */
-	for {
-		var body Node
-		var cond Node
-		var init Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwIf)
-		if _1 == nil {
-			break
-		}
-		_break := true
-		ps._enter()
-		for {
-			init = ps.simpleStmt()
-			if init == nil {
-				break
-			}
-			var _2 Node
-			_2 = ps._expectK(TokenTypeOpSemi)
-			if _2 == nil {
-				break
-			}
-			cond = ps.expression()
-			if cond == nil {
-				break
-			}
-			_break = false
-			break
-		}
-		ps._leave()
-		if _break {
-			break
-		}
-		body = ps.block()
-		if body == nil {
-			break
-		}
-		return NewIfStmtNode(ps._filePath, ps._fileContent, init, cond, body, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* 'if' [ cond=expression ] body=block {if_stmt(_, cond, body, _)}
-	 */
-	for {
-		var body Node
-		var cond Node
-		var _1 Node
-		_1 = ps._expectK(TokenTypeKwIf)
-		if _1 == nil {
-			break
-		}
-		_break := true
-		ps._enter()
-		for {
-			cond = ps.expression()
-			if cond == nil {
-				break
-			}
-			_break = false
-			break
-		}
-		ps._leave()
-		if _break {
-			break
-		}
-		body = ps.block()
-		if body == nil {
-			break
-		}
-		return NewIfStmtNode(ps._filePath, ps._fileContent, nil, cond, body, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-simple_stmt:
-| assignment
-| short_val_decl
-| inc_dec_stmt
-| send_stmt
-| expression_stmt
-*/
-func (ps *Parser) simpleStmt() Node {
-	/* assignment
-	 */
-	for {
-		var _1 Node
-		_1 = ps.assignment()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* short_val_decl
-	 */
-	for {
-		var _1 Node
-		_1 = ps.shortValDecl()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* inc_dec_stmt
-	 */
-	for {
-		var _1 Node
-		_1 = ps.incDecStmt()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* send_stmt
-	 */
-	for {
-		var _1 Node
-		_1 = ps.sendStmt()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	/* expression_stmt
-	 */
-	for {
-		var _1 Node
-		_1 = ps.expressionStmt()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
-	return nil
-}
-
-/*
 expression_stmt:
 | x=expression {expr_stmt(x)}
 */
@@ -14754,75 +14823,6 @@ func (ps *Parser) emptyBlock() Node {
 			break
 		}
 		return NewBlockStmtNode(ps._filePath, ps._fileContent, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-labeled_stmt:
-| x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
-| x=IDENT ':' y=statement {labeled_stmt(x,y)}
-| x=IDENT ':' {labeled_stmt(x,_)}
-*/
-func (ps *Parser) labeledStmt() Node {
-	/* x=IDENT ':' b=empty_block {labeled_stmt(x,b)}
-	 */
-	pos := ps._mark()
-	for {
-		var b Node
-		var x Node
-		x = ps._expectK(TokenTypeIdent)
-		if x == nil {
-			break
-		}
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpColon)
-		if _1 == nil {
-			break
-		}
-		b = ps.emptyBlock()
-		if b == nil {
-			break
-		}
-		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, b, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x=IDENT ':' y=statement {labeled_stmt(x,y)}
-	 */
-	for {
-		var x Node
-		var y Node
-		x = ps._expectK(TokenTypeIdent)
-		if x == nil {
-			break
-		}
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpColon)
-		if _1 == nil {
-			break
-		}
-		y = ps.statement()
-		if y == nil {
-			break
-		}
-		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, y, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	/* x=IDENT ':' {labeled_stmt(x,_)}
-	 */
-	for {
-		var x Node
-		x = ps._expectK(TokenTypeIdent)
-		if x == nil {
-			break
-		}
-		var _1 Node
-		_1 = ps._expectK(TokenTypeOpColon)
-		if _1 == nil {
-			break
-		}
-		return NewLabeledStmtNode(ps._filePath, ps._fileContent, x, nil, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil

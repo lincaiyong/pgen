@@ -3,7 +3,7 @@ package snippet
 const ErrorContextFunc = `func errorContext(filePath string, fileContent []rune, offset, lineIdx, charIdx int) string {
 	var lineStartOffset int
 	for i := offset; i >= 0; i-- {
-		if fileContent[i] == '\n' {
+		if i < len(fileContent) && fileContent[i] == '\n' {
 			lineStartOffset = i + 1
 			break
 		}

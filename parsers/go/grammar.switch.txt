@@ -2,7 +2,7 @@ select_stmt: 'select' '{' s=select_case_clause* '}' {select_stmt(s)}
 select_case_clause:
     | 'case' x=select_case_condition ':' y=statement_semi_list? {select_case_clause(x,y)}
     | 'default' ':' x=statement_semi_list? {default_clause(x)}
-select_case_condition: send_stmt|assignment|short_var_decl|expression_stmt
+select_case_condition: send_stmt|assign_stmt|short_var_decl|expression_stmt
 
 type_switch_stmt:
     | 'switch' [ (init=simple_stmt ';')? assign=type_switch_guard ] '{' s=type_case_clause* '}' {type_switch_stmt(init,assign,s)}

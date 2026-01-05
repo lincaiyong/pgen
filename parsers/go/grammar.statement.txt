@@ -41,8 +41,9 @@ go_stmt: 'go' x=expression {go_stmt(x)}
 return_stmt: 'return' x=expression_list? {return_stmt(x)}
 
 simple_stmt:
-    | assignment
-    | short_val_decl
+    | assign_stmt
+    | aug_assign_stmt
+    | var_decl_stmt
     | inc_stmt
     | dec_stmt
     | send_stmt
@@ -52,7 +53,7 @@ inc_stmt: x=expression '++' {inc_stmt(x)}
 dec_stmt: x=expression '--' {dec_stmt(x)}
 send_stmt: x=expression '<-' y=expression {send_stmt(x,y)}
 
-short_val_decl: l=identifier_list ':=' r=expression_list {short_var_decl(l, r)}
-assignment: l=expression_list '=' r=expression_list {assign_stmt(l, r)}
-aug_assignment: l=expression_list op=aug_op r=expression_list {aug_assign_stmt(l, op, r)}
+var_decl_stmt: l=identifier_list ':=' r=expression_list {short_var_decl(l, r)}
+assign_stmt: l=expression_list '=' r=expression_list {assign_stmt(l, r)}
+aug_assign_stmt: l=expression_list op=aug_op r=expression_list {aug_assign_stmt(l, op, r)}
 aug_op: '+=' | '-=' | '|=' | '^=' | '*=' | '/=' | '%=' | '<<=' | '>>=' | '&=' | '&^='

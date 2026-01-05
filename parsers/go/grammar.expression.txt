@@ -1,13 +1,13 @@
 expression(memo):
-    | conditional_or_expression
-conditional_or_expression:
-    | x=conditional_or_expression z='||' y=conditional_and_expression {binary_expr(x,y,z)}
-    | conditional_and_expression
-conditional_and_expression:
-    | x=conditional_and_expression z='&&' y=rel_op_expression {binary_expr(x,y,z)}
-    | rel_op_expression
-rel_op_expression:
-    | x=rel_op_expression z=rel_op y=add_op_expression {binary_expr(x,y,z)}
+    | or_expression
+or_expression:
+    | x=or_expression '||' y=and_expression {logical_or_expr(x,y)}
+    | and_expression
+and_expression:
+    | x=and_expression '&&' y=compare_expression {logical_and_expr(x,y,z)}
+    | compare_expression
+compare_expression:
+    | x=compare_expression op=('==' | '!=' | '<' | '<=' | '>' | '>=') y=add_op_expression {binary_expr(x,op,z)}
     | add_op_expression
 add_op_expression:
     | x=add_op_expression z=add_op y=mul_op_expression {binary_expr(x,y,z)}
@@ -40,7 +40,6 @@ primary_expr:
     | i=IDENT {ident(i)}
 make_ident: x='make' {ident(x)}
 new_ident: x='new' {ident(x)}
-rel_op: '==' | '!=' | '<' | '<=' | '>' | '>='
 add_op: '+' | '-' | '|' | '^'
 mul_op: '*' | '/' | '%' | '<<' | '>>' | '&' | '&^'
 unary_op: '+' | '-' | '!' | '^' | '*' | '&' | '<-'

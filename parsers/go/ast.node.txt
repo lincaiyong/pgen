@@ -40,3 +40,7 @@ function_decl                       <name generic_parameters parameters results 
 method_decl                         <receiver name generic_parameters parameters results body>
 
 receiver                            <name star type>
+
+logical_or_expr                     <lhs rhs>
+logical_and_expr                    <lhs rhs>
+compare_expr                        <lhs op rhs>

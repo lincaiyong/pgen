@@ -1,0 +1,21 @@
+statement_semi_list: statement_semi+
+statement_semi: x=statement pseudo_semi {x}
+statement:
+    | var_decl
+    | const_decl
+    | type_decl
+    | labeled_stmt
+    | simple_stmt
+    | if_stmt
+    | type_switch_stmt
+    | expr_switch_stmt
+    | 'select' b=select_body {select_stmt(b)}
+    | for_stmt
+    | 'go' x=expression {go_stmt(x)}
+    | 'return' x=expression_list? {return_stmt(x)}
+    | x='break' y=IDENT? {branch_stmt(x,y)}
+    | x='continue' y=IDENT? {branch_stmt(x,y)}
+    | x='goto' y=IDENT {branch_stmt(x,y)}
+    | x='fallthrough' {branch_stmt(x,_)}
+    | 'defer' x=expression {defer_stmt(x)}
+    | block

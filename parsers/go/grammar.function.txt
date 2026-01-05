@@ -1,4 +1,4 @@
-function_decl: 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
+function_decl: 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 function_ident: n=IDENT {function_ident(n)}
 function_parameters: '(' p=','.parameter* ','? ')' {p}
 parameter:
@@ -13,7 +13,6 @@ function_result:
     | type_only_function_result
 type_only_function_result: t=type {function_result(_, t)}
 function_result_ident: n=IDENT {function_result_ident(n)}
-
 
 method_decl: 'func' '(' rc=receiver ')' n=method_ident '(' p=','.parameter* ','? ')' rs=result_decl? b=block? {method_decl(rc, n, p, rs, b)}
 method_ident: n=IDENT {method_ident(n)}

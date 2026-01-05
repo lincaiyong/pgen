@@ -11494,63 +11494,16 @@ func (ps *Parser) Parse() (ret Node, err error) {
 
 /*
 file:
-| n=package_decl i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
+| 'package' n=package_ident ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 */
 func (ps *Parser) file() Node {
-	/* n=package_decl i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
+	/* 'package' n=package_ident ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 	 */
 	pos := ps._mark()
 	for {
 		var i Node
 		var n Node
 		var t Node
-		n = ps.packageDecl()
-		if n == nil {
-			break
-		}
-		_1 := make([]Node, 0)
-		var _2 Node
-		for {
-			_2 = ps.importDecl()
-			if _2 == nil {
-				break
-			}
-			_1 = append(_1, _2)
-		}
-		i = NewNodesNode(_1)
-		_ = i
-		_3 := make([]Node, 0)
-		var _4 Node
-		for {
-			_4 = ps.topLevelDeclSemi()
-			if _4 == nil {
-				break
-			}
-			_3 = append(_3, _4)
-		}
-		t = NewNodesNode(_3)
-		_ = t
-		var _5 Node
-		_5 = ps._expectK(TokenTypeEndOfFile)
-		if _5 == nil {
-			break
-		}
-		return NewFileNode(ps._filePath, ps._fileContent, n, i, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
-	}
-	ps._reset(pos)
-	return nil
-}
-
-/*
-package_decl:
-| 'package' n=package_ident ';' {n}
-*/
-func (ps *Parser) packageDecl() Node {
-	/* 'package' n=package_ident ';' {n}
-	 */
-	pos := ps._mark()
-	for {
-		var n Node
 		var _1 Node
 		_1 = ps._expectK(TokenTypeKwPackage)
 		if _1 == nil {
@@ -11565,7 +11518,34 @@ func (ps *Parser) packageDecl() Node {
 		if _2 == nil {
 			break
 		}
-		return n
+		_3 := make([]Node, 0)
+		var _4 Node
+		for {
+			_4 = ps.importDecl()
+			if _4 == nil {
+				break
+			}
+			_3 = append(_3, _4)
+		}
+		i = NewNodesNode(_3)
+		_ = i
+		_5 := make([]Node, 0)
+		var _6 Node
+		for {
+			_6 = ps.topLevelDeclSemi()
+			if _6 == nil {
+				break
+			}
+			_5 = append(_5, _6)
+		}
+		t = NewNodesNode(_5)
+		_ = t
+		var _7 Node
+		_7 = ps._expectK(TokenTypeEndOfFile)
+		if _7 == nil {
+			break
+		}
+		return NewFileNode(ps._filePath, ps._fileContent, n, i, t, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
 	return nil
@@ -11828,10 +11808,10 @@ func (ps *Parser) topLevelDecl() Node {
 
 /*
 function_decl:
-| 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
+| 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 */
 func (ps *Parser) functionDecl() Node {
-	/* 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
+	/* 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
 	 */
 	pos := ps._mark()
 	for {
@@ -11849,7 +11829,7 @@ func (ps *Parser) functionDecl() Node {
 		if n == nil {
 			break
 		}
-		t = ps.functionGenericParameters()
+		t = ps.genericParameterDecl()
 		_ = t
 		p = ps.functionParameters()
 		if p == nil {
@@ -12872,24 +12852,6 @@ func (ps *Parser) typeIdent() Node {
 		return NewTypeIdentNode(ps._filePath, ps._fileContent, n, ps._tokens[pos].Start, ps._visibleTokenBefore(ps._mark()).End)
 	}
 	ps._reset(pos)
-	return nil
-}
-
-/*
-function_generic_parameters:
-| generic_parameter_decl
-*/
-func (ps *Parser) functionGenericParameters() Node {
-	/* generic_parameter_decl
-	 */
-	for {
-		var _1 Node
-		_1 = ps.genericParameterDecl()
-		if _1 == nil {
-			break
-		}
-		return _1
-	}
 	return nil
 }
 

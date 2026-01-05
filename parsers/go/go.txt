@@ -6,16 +6,9 @@
 ------------------------------------------------------------------------------------------------------------------------
 #include(ast.node.txt)
 ------------------------------------------------------------------------------------------------------------------------
-# FILE ################################
+file: 'package' n=package_ident ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 
-file: n=package_decl i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
-
-# PACKAGE DECLARATION #################
-
-package_decl: 'package' n=package_ident ';' {n}
 package_ident: n=IDENT {package_ident(n)}
-
-# IMPORT DECLARATION ##################
 
 import_decl:
     | 'import' '(' specs=(t=import_spec pseudo_semi {t})* ')' ';'? {import_decl(specs)}
@@ -25,34 +18,11 @@ import_dot: d='.' {import_dot(d)}
 import_ident: n=IDENT {import_ident(n)}
 import_path: s=STRING {import_path(s)}
 
-# TOP LEVEL DECLARATION ###############
-
 top_level_decl_semi: t=top_level_decl ';'? {t}
 top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 
-# FUNCTION DECLARATION ################
-
 #include(grammar.function.txt)
-
-# CONST DECLARATION ###################
-
-const_decl:
-    | 'const' '(' c=const_spec_semi* ')' {const_decl(c)}
-    | 'const' c=const_spec {const_decl([c])}
-const_spec_semi: c=const_spec pseudo_semi {c}
-const_spec: i=','.const_ident+ (t=type? '=' e=expression_list)? {const_spec(i, t, e)}
-const_ident: n=IDENT {const_ident(n)}
-
-# VAR DECLARATION #####################
-
-var_decl:
-    | 'var' '(' x=var_spec_semi* ')' {var_decl(x)}
-    | 'var' x=var_spec {var_decl([x])}
-var_spec_semi: x=var_spec pseudo_semi {x}
-var_spec: i=','.var_ident+  (t=type? '=' e=expression_list)? {var_spec(i, t, e)}
-var_ident: n=IDENT {var_ident(n)}
-
-# TYPE DECLARATION ####################
+#include(grammar.const.var.txt)
 
 type_decl:
     | 'type' '(' x=type_spec_semi* ')' {type_decl(x)}
@@ -63,36 +33,11 @@ type_spec:
     | x=type_ident t=generic_parameter_decl? y=type {type_spec(x, t, y)}
 type_ident: n=IDENT {type_ident(n)}
 
-# GENERIC PARAMETER ###################
-function_generic_parameters: generic_parameter_decl
-
 #include(grammar.generic.txt)
-
-# XXX #################################
 
 block: '{' x=statement_semi_list? '}' {block_stmt(x)}
 
-statement_semi_list: statement_semi+
-statement_semi: x=statement pseudo_semi {x}
-statement:
-    | var_decl
-    | const_decl
-    | type_decl
-    | labeled_stmt
-    | simple_stmt
-    | if_stmt
-    | type_switch_stmt
-    | expr_switch_stmt
-    | 'select' b=select_body {select_stmt(b)}
-    | for_stmt
-    | 'go' x=expression {go_stmt(x)}
-    | 'return' x=expression_list? {return_stmt(x)}
-    | x='break' y=IDENT? {branch_stmt(x,y)}
-    | x='continue' y=IDENT? {branch_stmt(x,y)}
-    | x='goto' y=IDENT {branch_stmt(x,y)}
-    | x='fallthrough' {branch_stmt(x,_)}
-    | 'defer' x=expression {defer_stmt(x)}
-    | block
+#include(grammar.statement.txt)
 
 select_body: '{' cases=common_clause* '}' {block_stmt(cases)}
 

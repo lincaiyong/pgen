@@ -1,0 +1,13 @@
+const_decl:
+    | 'const' '(' c=const_spec_semi* ')' {const_decl(c)}
+    | 'const' c=const_spec {const_decl([c])}
+const_spec_semi: c=const_spec pseudo_semi {c}
+const_spec: i=','.const_ident+ (t=type? '=' e=expression_list)? {const_spec(i, t, e)}
+const_ident: n=IDENT {const_ident(n)}
+
+var_decl:
+    | 'var' '(' x=var_spec_semi* ')' {var_decl(x)}
+    | 'var' x=var_spec {var_decl([x])}
+var_spec_semi: x=var_spec pseudo_semi {x}
+var_spec: i=','.var_ident+  (t=type? '=' e=expression_list)? {var_spec(i, t, e)}
+var_ident: n=IDENT {var_ident(n)}

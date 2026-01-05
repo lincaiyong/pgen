@@ -17404,27 +17404,24 @@ func (tk *Tokenizer) Clean(tokens []*Token) []*Token {
 	return ret
 }
 
-type Any struct {
-    depth int
+func (ps *Parser) _setDepth(d int) {
+    ps._any = d
 }
 
-func (ps *Parser) _getAny() *Any {
-    if ps._any == nil {
-        ps._any = &Any{}
-    }
-    return ps._any.(*Any)
+func (ps *Parser) _getDepth() int {
+    return ps._any.(int)
 }
 
 func (ps *Parser) _enter() {
-	ps._getAny().depth = ps._bracketDepth + 1
+	ps._setDepth(ps._bracketDepth + 1)
 }
 
 func (ps *Parser) _leave() {
-	ps._getAny().depth = 0
+	ps._setDepth(0)
 }
 
 func (ps *Parser) _hackCompositeLitNode() Node {
-	if ps._bracketDepth >= ps._getAny().depth {
+	if ps._bracketDepth >= ps._getDepth() {
 		return ps.compositeLit()
 	}
 	return nil

@@ -88,7 +88,7 @@ var
 }
 ~
 ------------------------------------------------------------------------------------------------------------------------
-file                <package import decls>
+file                <package imports declarations>
 assign_stmt         <lhs op rhs>
 block_stmt          <list>
 branch_stmt         <tok label>
@@ -116,13 +116,13 @@ slice_expr          <x low high max>
 unary_expr          <op x>
 array_type          <len elt>
 chan_type           <dir value>
-func_type           <params results>
+function_type           <params results>
 interface_type      <methods>
 map_type            <key value>
 struct_type         <x>
 basic_lit           <value>
 composite_lit       <type elts>
-func_lit            <type body>
+function_lit            <type body>
 case_clause         <list body>
 common_clause       <common body>
 field_list          <list>
@@ -152,7 +152,7 @@ import_path     <path>
 const_ident                 <ident>
 var_ident                   <ident>
 type_ident                  <ident>
-func_ident                  <ident>
+function_ident                  <ident>
 method_ident                <ident>
 
 generic_parameter                   <name type>
@@ -164,8 +164,8 @@ generic_type_constraint             <type>
 ellipsis_parameter                  <name type>
 parameter                           <name type>
 parameter_ident                     <ident>
-result                              <name type>
-result_ident                        <ident>
+function_result                              <name type>
+function_result_ident                        <ident>
 
 function_decl                       <name generic_parameters parameters results body>
 method_decl                         <receiver name generic_parameters parameters results body>
@@ -187,7 +187,7 @@ package_ident: n=IDENT {package_ident(n)}
 # IMPORT DECLARATION ##################
 
 import_decl:
-    | 'import' '(' specs=(t=import_spec end_semi {t})* ')' ';'? {import_decl(specs)}
+    | 'import' '(' specs=(t=import_spec pseudo_semi {t})* ')' ';'? {import_decl(specs)}
     | 'import' specs=import_spec ';'? {import_decl([specs])}
 import_spec: name=(import_dot | import_ident)? path=import_path {import_spec(name, path)}
 import_dot: d='.' {import_dot(d)}
@@ -201,20 +201,21 @@ top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 
 # FUNCTION DECLARATION ################
 
-function_decl: 'func' n=func_ident t=generic_parameter_decl? '(' p=','.parameter* ','? ')' r=result_decl? b=block? {function_decl(n, t, p, r, b)}
-func_ident: n=IDENT {func_ident(n)}
+function_decl: 'func' n=function_ident t=function_generic_parameters? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
+function_ident: n=IDENT {function_ident(n)}
+function_parameters: '(' p=','.parameter* ','? ')' {p}
 parameter:
     | n=parameter_ident '...' t=type {ellipsis_parameter(n, t)}
     | n=parameter_ident t=type? {parameter(n, t)}
 parameter_ident: n=IDENT {parameter_ident(n)}
-result_decl:
-    | '(' s=','.result+ ','? ')' {s}
-    | r=type_only_result {[r]}
-result:
-    | n=result_ident t=type? {result(n, t)}
-    | type_only_result
-type_only_result: t=type {result(_, t)}
-result_ident: n=IDENT {result_ident(n)}
+function_results:
+    | '(' s=','.function_result+ ','? ')' {s}
+    | r=type_only_function_result {[r]}
+function_result:
+    | n=function_result_ident t=type? {function_result(n, t)}
+    | type_only_function_result
+type_only_function_result: t=type {function_result(_, t)}
+function_result_ident: n=IDENT {function_result_ident(n)}
 
 # METHOD DECLARATION ##################
 
@@ -230,7 +231,7 @@ receiver_generic_type_ident: n=IDENT {receiver_generic_type_ident(n)}
 const_decl:
     | 'const' '(' c=const_spec_semi* ')' {const_decl(c)}
     | 'const' c=const_spec {const_decl([c])}
-const_spec_semi: c=const_spec end_semi {c}
+const_spec_semi: c=const_spec pseudo_semi {c}
 const_spec: i=','.const_ident+ (t=type? '=' e=expression_list)? {const_spec(i, t, e)}
 const_ident: n=IDENT {const_ident(n)}
 
@@ -239,7 +240,7 @@ const_ident: n=IDENT {const_ident(n)}
 var_decl:
     | 'var' '(' x=var_spec_semi* ')' {var_decl(x)}
     | 'var' x=var_spec {var_decl([x])}
-var_spec_semi: x=var_spec end_semi {x}
+var_spec_semi: x=var_spec pseudo_semi {x}
 var_spec: i=','.var_ident+  (t=type? '=' e=expression_list)? {var_spec(i, t, e)}
 var_ident: n=IDENT {var_ident(n)}
 
@@ -248,14 +249,14 @@ var_ident: n=IDENT {var_ident(n)}
 type_decl:
     | 'type' '(' x=type_spec_semi* ')' {type_decl(x)}
     | 'type' x=type_spec {type_decl([x])}
-type_spec_semi: x=type_spec end_semi {x}
+type_spec_semi: x=type_spec pseudo_semi {x}
 type_spec:
     | x=type_ident t=generic_parameter_decl? '=' y=type {type_eq_spec(x, t, y)}
     | x=type_ident t=generic_parameter_decl? y=type {type_spec(x, t, y)}
 type_ident: n=IDENT {type_ident(n)}
 
 # GENERIC PARAMETER ###################
-
+function_generic_parameters: generic_parameter_decl
 generic_parameter_decl: '[' x=','.generic_parameter+ ','? ']' {x}
 generic_parameter:
     | n=generic_parameter_ident t=generic_union_constraint? {generic_parameter(n, t)}
@@ -272,7 +273,7 @@ type_constraint:
 block: '{' x=statement_semi_list? '}' {block_stmt(x)}
 
 statement_semi_list: statement_semi+
-statement_semi: x=statement end_semi {x}
+statement_semi: x=statement pseudo_semi {x}
 statement:
     | var_decl
     | const_decl
@@ -374,9 +375,9 @@ interface_body: '{' x=method_spec_and_interface_type_name_semi* '}' {field_list(
 method_spec_and_interface_type_name_semi:
     | method_spec_semi
     | interface_type_name_semi
-    | '|'.('~'? t=type {t})+ end_semi {field(_,_,_)}
-method_spec_semi: x=method_spec end_semi {x}
-interface_type_name_semi: x=type_name end_semi {field(_,x,_)}
+    | '|'.('~'? t=type {t})+ pseudo_semi {field(_,_,_)}
+method_spec_semi: x=method_spec pseudo_semi {x}
+interface_type_name_semi: x=type_name pseudo_semi {field(_,x,_)}
 
 channel_type:
     | t=(a='chan' b='<-' {_pseudo_token(a, b)} | a='<-' b='chan' {_pseudo_token(a, b)} | 'chan') x=type {chan_type(t, x)}
@@ -427,7 +428,7 @@ primary_expr:
     | x=STRING {basic_lit(x)}
     | x=literal_type '{' y=','.keyed_element* ','? '}' {composite_lit(x, y)}
     | _hack_composite_lit_node
-    | 'func' x=signature y=block {func_lit(x,y)}
+    | 'func' x=signature y=block {function_lit(x,y)}
     | x=type '.' y=IDENT {selector_expr(x,y)}
     | i=IDENT {ident(i)}
 make_ident: x='make' {ident(x)}
@@ -464,7 +465,7 @@ struct_body: '{' x=field_decl_semi* '}' {field_list(x)}
 struct_type:
     | 'struct' b=struct_body {struct_type(b)}
 
-field_decl_semi: x=field_decl end_semi {x}
+field_decl_semi: x=field_decl pseudo_semi {x}
 field_decl:
     | x=identifier_list y=type z=tag? {field(x,y,z)}
     | x=embedded_field y=tag? {field(_,x,y)}
@@ -473,7 +474,7 @@ embedded_field:
     | t=type_name_or_generic_type_instantiation {t}
 tag: x=STRING {basic_lit(x)}
 
-end_semi: ';' | &')'| &'}'
+pseudo_semi: ';' | &')'| &'}'
 
 ------------------------------------------------------------------------------------------------------------------------
 func (tk *Tokenizer) Clean(tokens []*Token) []*Token {
@@ -529,27 +530,24 @@ func (tk *Tokenizer) Clean(tokens []*Token) []*Token {
 	return ret
 }
 
-type Any struct {
-    depth int
+func (ps *Parser) _setDepth(d int) {
+    ps._any = d
 }
 
-func (ps *Parser) _getAny() *Any {
-    if ps._any == nil {
-        ps._any = &Any{}
-    }
-    return ps._any.(*Any)
+func (ps *Parser) _getDepth() int {
+    return ps._any.(int)
 }
 
 func (ps *Parser) _enter() {
-	ps._getAny().depth = ps._bracketDepth + 1
+	ps._setDepth(ps._bracketDepth + 1)
 }
 
 func (ps *Parser) _leave() {
-	ps._getAny().depth = 0
+	ps._setDepth(0)
 }
 
 func (ps *Parser) _hackCompositeLitNode() Node {
-	if ps._bracketDepth >= ps._getAny().depth {
+	if ps._bracketDepth >= ps._getDepth() {
 		return ps.compositeLit()
 	}
 	return nil

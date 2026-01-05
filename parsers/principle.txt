@@ -1,0 +1,43 @@
+# 单一职责原则
+
+一个AST节点，只为一种特定的语法设计。
+
+example：
+- bad 1：assign_stmt <lhs op rhs>
+    - 既是为了`a = b`，也是为了`a := b`，两者完全不同的，不应该混在一起
+
+# AST节点和属性的命名
+
+贴切更重要，不追求简单。
+
+example：
+- good 1：method_decl <receiver name generic_parameters parameters results body>
+    - recv -> receiver
+    - params -> parameters
+
+# 常用节点名（后缀）
+
+必要的简写，避免无效文本过多。
+
+- decl：类型的声明、函数的声明
+- spec：用于说明一些部分
+- expr：表达式
+- stmt：语句
+- ident：特定节点的名字（function_ident、package_ident），避免全篇都是token，很难搜索到想要的ident
+- type：类型
+
+# 去掉不包含信息的节点
+
+example：
+- good 1：`package_decl: 'package' n=package_ident ';' {n}`
+    - 这里可以定义一个package_decl节点，但是他不包含任何信息，照这个原则去掉
+
+# grammar上尽量不要内联
+
+example：
+- good 1：
+    ```
+    file: n=package_decl ...
+    package_decl: 'package' n=package_ident ';' {n}
+    ```
+    - 这里package_decl规则可以省略，但尽量不省略，对齐抽象层次，没有额外开销的

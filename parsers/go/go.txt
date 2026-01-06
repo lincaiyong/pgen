@@ -4,24 +4,21 @@
 ------------------------------------------------------------------------------------------------------------------------
 #include(token.op.txt)
 ------------------------------------------------------------------------------------------------------------------------
-#include(ast.node.txt)
-#include(ast.expr.txt)
-#include(ast.stmt.txt)
-#include(ast.type.txt)
-------------------------------------------------------------------------------------------------------------------------
-file: 'package' n=package_ident ';' i=import_decl* t=top_level_decl_semi* END_OF_FILE {file(n, i, t)}
 
+------------------------------------------------------------------------------------------------------------------------
+file: p=package_decl i=import_decl* t=top_level_decl* END_OF_FILE {file(p, i, t)}
+
+package_decl: 'package' n=package_ident ';' {package_decl(n)}
 package_ident: n=IDENT {package_ident(n)}
 
-import_decl:
-    | 'import' '(' specs=(t=import_spec pseudo_semi {t})* ')' ';'? {import_decl(specs)}
-    | 'import' specs=import_spec ';'? {import_decl([specs])}
-import_spec: name=(import_dot | import_ident)? path=import_path {import_spec(name, path)}
-import_dot: d='.' {import_dot(d)}
+import_decl: import_group_decl | import_one_decl
+import_group_decl: 'import' '(' s=import_spec* ')' ';'? {import_group_decl(s)}
+import_one_decl: 'import' s=import_spec {import_on_decl(s)}
+import_spec: name=(import_dot | import_ident)? path=import_path ';'? {import_spec(name, path)}
+import_dot: '.' {import_dot()}
 import_ident: n=IDENT {import_ident(n)}
 import_path: s=STRING {import_path(s)}
 
-top_level_decl_semi: t=top_level_decl ';'? {t}
 top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 
 #include(grammar.function.txt)
@@ -33,7 +30,6 @@ top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 #include(grammar.switch.txt)
 
 expression_stmt: x=expression {expr_stmt(x)}
-
 
 type:
     | type_name_or_generic_type_instantiation

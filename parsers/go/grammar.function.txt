@@ -1,11 +1,11 @@
-function_decl: 'func' n=function_ident t=generic_parameter_decl? p=function_parameters r=function_results? b=block? {function_decl(n, t, p, r, b)}
+function_decl: 'func' n=function_ident t=generic_parameter_decl? p=function_parameter_decl r=function_result_decl? b=block? ';'? {function_decl(n, t, p, r, b)}
 function_ident: n=IDENT {function_ident(n)}
-function_parameters: '(' p=','.parameter* ','? ')' {p}
+function_parameter_decl: '(' p=','.parameter* ','? ')' {p}
 parameter:
     | n=parameter_ident '...' t=type {ellipsis_parameter(n, t)}
     | n=parameter_ident t=type? {parameter(n, t)}
 parameter_ident: n=IDENT {parameter_ident(n)}
-function_results:
+function_result_decl:
     | '(' s=','.function_result+ ','? ')' {s}
     | r=type_only_function_result {[r]}
 function_result:
@@ -14,7 +14,7 @@ function_result:
 type_only_function_result: t=type {function_result(_, t)}
 function_result_ident: n=IDENT {function_result_ident(n)}
 
-method_decl: 'func' '(' rc=receiver ')' n=method_ident '(' p=','.parameter* ','? ')' rs=result_decl? b=block? {method_decl(rc, n, p, rs, b)}
+method_decl: 'func' '(' rc=receiver ')' n=method_ident '(' p=','.parameter* ','? ')' rs=result_decl? b=block? ';'? {method_decl(rc, n, p, rs, b)}
 method_ident: n=IDENT {method_ident(n)}
 receiver: n=receiver_ident? star='*'? t=receiver_type_ident ('[' g=','.receiver_generic_type_ident+ ','? ']')? {receiver(n, star, t, g)}
 receiver_ident: n=IDENT {receiver_ident(n)}

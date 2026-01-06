@@ -1,0 +1,17 @@
+import_decl:
+    | import_group_decl
+    | import_one_decl
+
+import_group_decl:
+    | 'import' '(' targets=import_name_path* ')' ';'? {import_group_decl(targets)}
+import_one_decl:
+    | 'import' target=import_name_path {import_one_decl(target)}
+
+import_name_path:
+    | name=(import_dot | import_ident)? path=import_path ';'? {import_name_path(name, path)}
+import_dot:
+    | '.' {import_dot()}
+import_ident:
+    | ident=IDENT {import_ident(ident)}
+import_path:
+    | path=STRING {import_path(path)}

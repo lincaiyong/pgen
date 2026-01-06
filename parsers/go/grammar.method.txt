@@ -1,0 +1,6 @@
+method_decl:
+    | 'func' receiver=receiver_decl name=method_ident parameter=parameter_decl result=result_decl? body=block? ';'? \
+        {method_decl(receiver, name, parameter, result, body)}
+
+method_ident:
+    | ident=IDENT {method_ident(ident)}

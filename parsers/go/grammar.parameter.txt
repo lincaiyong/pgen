@@ -1,0 +1,10 @@
+parameter_decl:
+    | '(' parameters=','.parameter* ','? ')' {parameter_decl(parameters)}
+
+parameter:
+    | name=parameter_ident '...' type=type {ellipsis_parameter(name, type)}
+    | name=parameter_ident type=type {name_type_parameter(name, type)}
+    | name=parameter_ident {name_parameter(name)}
+
+parameter_ident:
+    | ident=IDENT {parameter_ident(ident)}

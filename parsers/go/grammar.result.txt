@@ -1,0 +1,14 @@
+result_decl:
+    | result_group_decl
+    | result_one_decl
+
+result_group_decl:
+    | '(' types=','.type+ ','? ')' {result_types_decl(types)}
+    | '(' results=','.result_name_type+ ','? ')' {result_group_decl(results)}
+result_one_decl:
+    | type=type {result_one_decl(type)}
+
+result_name_type:
+    | name=result_ident type=type {result_name_type(name, type)}
+    | name=result_ident {result_name(name)}
+result_ident: ident=IDENT {result_ident(ident)}

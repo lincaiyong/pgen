@@ -4,27 +4,29 @@
 ------------------------------------------------------------------------------------------------------------------------
 #include(token.op.txt)
 ------------------------------------------------------------------------------------------------------------------------
-
+#include(node)
 ------------------------------------------------------------------------------------------------------------------------
-file: p=package_decl i=import_decl* t=top_level_decl* END_OF_FILE {file(p, i, t)}
+file: package=package_decl imports=import_decl* decls=top_level_decl* END_OF_FILE {file(package, imports, decls)}
 
-package_decl: 'package' n=package_ident ';' {package_decl(n)}
-package_ident: n=IDENT {package_ident(n)}
-
-import_decl: import_group_decl | import_one_decl
-import_group_decl: 'import' '(' s=import_spec* ')' ';'? {import_group_decl(s)}
-import_one_decl: 'import' s=import_spec {import_on_decl(s)}
-import_spec: name=(import_dot | import_ident)? path=import_path ';'? {import_spec(name, path)}
-import_dot: '.' {import_dot()}
-import_ident: n=IDENT {import_ident(n)}
-import_path: s=STRING {import_path(s)}
+package_decl: 'package' ident=package_ident ';' {package_decl(ident)}
+package_ident: ident=IDENT {package_ident(ident)}
 
 top_level_decl: function_decl | method_decl | const_decl | var_decl | type_decl
 
+#include(grammar.import.txt)
+
+#include(grammar.generic.parameter.txt)
+#include(grammar.parameter.txt)
+#include(grammar.result.txt)
+#include(grammar.receiver.txt)
+
 #include(grammar.function.txt)
-#include(grammar.const.var.txt)
+
+#include(grammar.method.txt)
+
+#include(grammar.const.txt)
+#include(grammar.var.txt)
 #include(grammar.type.txt)
-#include(grammar.generic.txt)
 #include(grammar.statement.txt)
 #include(grammar.if.for.txt)
 #include(grammar.switch.txt)

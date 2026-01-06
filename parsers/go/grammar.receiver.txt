@@ -1,0 +1,16 @@
+receiver_decl:
+    | '(' name=receiver_ident? type=(receiver_type | star_receiver_type) ')' {receiver_decl(name, type)}
+
+receiver_ident: ident=IDENT {receiver_ident(ident)}
+
+receiver_type:
+    | type=receiver_type_ident generic_type=receiver_generic_type_decl? {receiver_type(type, generic_type)}
+star_receiver_type:
+    | '*' type=receiver_type_ident generic_type=receiver_generic_type_decl? {star_receiver_type(type, generic_type)}
+
+receiver_type_ident: ident=IDENT {receiver_type_ident(ident)}
+
+receiver_generic_type_decl:
+    | '[' types=','.receiver_generic_type_ident+ ','? ']' {receiver_generic_type_decl(types)}
+receiver_generic_type_ident:
+    | ident=IDENT {receiver_generic_type_ident(ident)}

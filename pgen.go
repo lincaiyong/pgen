@@ -6,8 +6,29 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
+
+func preProcessNodes(text string) string {
+	regex := regexp.MustCompile(`\{([a-z][a-z0-9_]+\([^)]*\))}`)
+	items := regex.FindAllStringSubmatch(text, -1)
+	var nodes []string
+	nodeMap := make(map[string]struct{})
+	for _, item := range items {
+		if _, ok := nodeMap[item[1]]; !ok {
+			nodeMap[item[1]] = struct{}{}
+			node := strings.ReplaceAll(item[1], " ", "")
+			node = strings.ReplaceAll(node, ",", " ")
+			node = strings.ReplaceAll(node, "(", " <")
+			node = strings.ReplaceAll(node, ")", ">")
+			nodes = append(nodes, node)
+		}
+	}
+	sort.Strings(nodes)
+	text = strings.ReplaceAll(text, "#include(node)", strings.Join(nodes, "\n"))
+	return text
+}
 
 func PreProcess(file string) (string, error) {
 	b, err := os.ReadFile(file)
@@ -16,7 +37,7 @@ func PreProcess(file string) (string, error) {
 	}
 	text := string(b)
 	dir := filepath.Dir(file)
-	reg := regexp.MustCompile(`(?m)^#include\((.+?)\)$`)
+	reg := regexp.MustCompile(`(?m)^#include\((.+?\.txt)\)$`)
 	ret := reg.FindAllStringSubmatch(text, -1)
 	if len(ret) == 0 {
 		return text, nil
@@ -30,6 +51,7 @@ func PreProcess(file string) (string, error) {
 		}
 		text = strings.ReplaceAll(text, v[0], string(b))
 	}
+	text = preProcessNodes(text)
 	return text, nil
 }
 

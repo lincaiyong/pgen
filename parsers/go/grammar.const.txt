@@ -1,0 +1,17 @@
+const_decl:
+    | const_group_decl
+    | const_one_decl
+
+const_group_decl:
+    | 'const' '(' constants=const_name_type_value* ')' {const_group_decl(constants)}
+
+const_one_decl:
+    | 'const' constant=const_name_type_value {const_one_decl(constant)}
+
+const_name_type_value:
+    | =','.const_ident+ (t=type? '=' e=expression_list)? ';'? {const_spec(i, t, e)}
+
+// iota
+
+const_ident:
+    | ident=IDENT {const_ident(ident)}

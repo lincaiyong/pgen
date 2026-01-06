@@ -1,0 +1,16 @@
+generic_parameter_decl:
+    | '[' parameters=','.generic_parameter+ ','? ']' {generic_parameter_decl(parameters)}
+
+generic_parameter:
+    | ident=generic_parameter_ident constraint=generic_union_constraint? {generic_parameter(ident, constraint)}
+
+generic_parameter_ident:
+    | ident=IDENT {generic_parameter_ident(ident)}
+
+generic_union_constraint:
+    | x=type_constraint !'|' {x}
+    | types='|'.type_constraint+ {generic_union_constraint(types)}
+
+type_constraint:
+    | '~' type=type {generic_underlying_type_constraint(type)}
+    | type=type {generic_type_constraint(type)}

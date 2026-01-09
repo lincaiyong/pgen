@@ -1,45 +1,47 @@
 expression(memo):
     | or_expression
 or_expression:
-    | x=or_expression '||' y=and_expression {logical_or_expr(x,y)}
+    | lhs=or_expression '||' rhs=and_expression {logical_or_expr(lhs, rhs)}
     | and_expression
 and_expression:
-    | x=and_expression '&&' y=compare_expression {logical_and_expr(x,y,z)}
+    | lhs=and_expression '&&' rhs=compare_expression {logical_and_expr(lhs, rhs)}
     | compare_expression
 compare_expression:
-    | x=compare_expression op=('==' | '!=' | '<' | '<=' | '>' | '>=') y=add_op_expression {binary_expr(x,op,z)}
+    | lhs=compare_expression op=('==' | '!=' | '<' | '<=' | '>' | '>=') rhs=add_op_expression {compare_expr(lhs, op, rhs)}
     | add_op_expression
 add_op_expression:
-    | x=add_op_expression z=add_op y=mul_op_expression {binary_expr(x,y,z)}
+    | lhs=add_op_expression op=('+' | '-' | '|' | '^') rhs=mul_op_expression {add_op_expr(lhs, op. rhs)}
     | mul_op_expression
 mul_op_expression:
-    | x=mul_op_expression z=mul_op y=unary_expr {binary_expr(x,y,z)}
+    | lhs=mul_op_expression op=('*' | '/' | '%' | '<<' | '>>' | '&' | '&^') rhs=unary_expr {mul_op_expr(lhs, op, rhs)}
     | unary_expr
 unary_expr:
-    | '*' x=unary_expr {star_expr(x)}
-    | x=unary_op y=unary_expr {unary_expr(x,y)}
+    | op=('*' | '+' | '-' | '!' | '^' | '*' | '&' | '<-') expr=unary_expr {unary_expr(op, expr)}
     | primary_expr
 primary_expr:
-    | make_ident '(' t=type (',' expression_list)? ','? ')' {make_expr(t)}
-    | new_ident '(' t=type ')' {new_expr(t)}
-    | x=primary_expr g=generic_args? '(' ')' {call_expr(x, g, _)}
-    | x=primary_expr g=generic_args? '(' y=expression_list '...'? ','? ')' {call_expr(x,g,y)}
-    | x=primary_expr '.' '(' y=type ')' {type_assert_expr(x,y)}
-    | e=primary_expr '[' l=expression? ':' h=expression ':' m=expression ']' {slice_expr(e,l,h,m)}
-    | e=primary_expr '[' l=expression? ':' h=expression? ']' {slice_expr(e,l,h,_)}
-    | x=primary_expr '[' y=expression ']' {index_expr(x,y)}
-    | x=primary_expr '.' y=IDENT {selector_expr(x, y)}
-    | x=type g=generic_args? '(' y=expression ','? ')' {call_expr(x,g,[y])}
-    | '(' x=expression ')' {paren_expr(x)}
-    | x=NUMBER {basic_lit(x)}
-    | x=STRING {basic_lit(x)}
-    | x=literal_type '{' y=','.keyed_element* ','? '}' {composite_lit(x, y)}
+    | 'make' '(' '[' ']' type=type ',' len=expression (',' cap=expression)? ','? ')' {make_slice_expr(type, len, cap)}
+    | 'make' '(' 'map' '[' k=type ']' v=type (',' hint=expression)? ','? ')' {make_map_expr(k, v, hint)}
+    | 'make' '(' 'chan' type=type (',' buffer=expression)? ','? ')' {make_chan_expr(type, buffer)}
+    | 'new' '(' type=type ','? ')' {new_expr(type)}
+    | callee=(primary_expr|type) type_argument=type_argument_decl? argument=argument_decl {call_expr(callee, type_argument, argument)}
+    | expr=primary_expr '.' '(' type=type ')' {type_assert_expr(expr, type)}
+    | target=primary_expr '[' low=expression? ':' high=expression? ':' max=expression ']' {full_slice_expr(target, low, high, max)}
+    | target=primary_expr '[' low=expression? ':' high=expression? ']' {slice_expr(target, low, high)}
+    | target=primary_expr '[' index=expression ']' {index_expr(target, index)}
+    | target=primary_expr '.' selector=IDENT {selector_expr(target, selector)}
+    | '(' expr=expression ')' {paren_expr(expr)}
+    | number=NUMBER {number_expr(number)}
+    | string=STRING {string_expr(string)}
+    | type=literal_type '{' y=','.keyed_element* ','? '}' {composite_lit(x, y)}
     | _hack_composite_lit_node
     | 'func' x=signature y=block {function_lit(x,y)}
     | x=type '.' y=IDENT {selector_expr(x,y)}
     | i=IDENT {ident(i)}
-make_ident: x='make' {ident(x)}
-new_ident: x='new' {ident(x)}
-add_op: '+' | '-' | '|' | '^'
-mul_op: '*' | '/' | '%' | '<<' | '>>' | '&' | '&^'
-unary_op: '+' | '-' | '!' | '^' | '*' | '&' | '<-'
+
+type_argument_decl:
+    | '[' types=','.type+ ','? ']' {type_argument_decl(types)}
+argument_decl:
+    | '(' arguments=','.argument* ','? ')' {argument_decl(arguments)}
+argument:
+    | expr=expression '...' {ellipsis_argument(expr)}
+    | expr=expression {argument(expr)}

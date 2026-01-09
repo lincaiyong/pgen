@@ -9,9 +9,7 @@ const_one_decl:
     | 'const' constant=const_name_type_value {const_one_decl(constant)}
 
 const_name_type_value:
-    | =','.const_ident+ (t=type? '=' e=expression_list)? ';'? {const_spec(i, t, e)}
-
-// iota
+    | names=','.const_ident+ type=type? ('=' values=expression_list)? ';'? {const_name_type_value(names, type, values)}
 
 const_ident:
     | ident=IDENT {const_ident(ident)}
